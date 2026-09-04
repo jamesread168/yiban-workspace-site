@@ -252,5 +252,134 @@
     }
   }
 
+  // ============ 学期课表浏览（按周查询整学期课程） ============
+  // 弹窗内可前后翻周、下拉跳周，一眼看到该周周一~周五全部课程；
+  // 使用临时课表的周会标注 📌 并高亮与默认课表不同的课格。
+  function openSemesterSchedule(weekNo) {
+    const weeks = window.getSemesterWeeks();
+    if (!weeks || !weeks.length) { toast('学期周历未加载'); return; }
+    const curNo = window.getSemesterWeekNo(new Date());
+    let no = (typeof weekNo === 'number' && weekNo >= 1 && weekNo <= weeks.length)
+      ? weekNo : (curNo || 1);
+
+    const dayNames = ['', '一', '二', '三', '四', '五'];
+    const PERIOD_SLOTS = ['第1节', '第2节', '第3节', '第4节', '第5节', '第6节'];
+    const PERIOD_TIMES = { '第1节': '8:55', '第2节': '9:45', '第3节': '10:40', '第4节': '11:30', '第5节': '14:10', '第6节': '15:05' };
+    const shortName = x => (x && (x.subject || x.name)) || '';
+
+    function build() {
+      const w = weeks[no - 1];
+      const monday = w.monday;
+      const { schedule, overridden } = window.getWeekScheduleByMonday(monday);
+      const todayYmd = window.ymd(new Date());
+
+      // 与默认课表不同的课格集合：'day|period'
+      const diffMap = new Set();
+      if (overridden && window.getWeekOverrideDiff) {
+        window.getWeekOverrideDiff(monday).forEach(x => diffMap.add(x.day + '|' + x.period));
+      }
+      const diffList = diffMap.size && window.getWeekOverrideDiff
+        ? window.getWeekOverrideDiff(monday) : [];
+
+      // 表头：周几 + 日期
+      const headCells = [1, 2, 3, 4, 5].map(d => {
+        const date = new Date(monday.getTime() + (d - 1) * 86400000);
+        const isToday = window.ymd(date) === todayYmd;
+        return `<th style="padding:6px 2px;font-size:12px;${isToday ? 'background:#FFD6E8;color:#C75A92;font-weight:800' : ''}">
+          周${dayNames[d]}<br/><span style="font-size:10px;font-weight:400">${date.getMonth() + 1}.${date.getDate()}${isToday ? ' ·今天' : ''}</span>
+        </th>`;
+      }).join('');
+
+      // 行 = 天，列 = 6 节正课（手机屏幕友好，课程用短名）
+      const bodyRows = [1, 2, 3, 4, 5].map(d => {
+        const items = schedule[d] || [];
+        const byPeriod = new Map(items.map(x => [x.period, x]));
+        const date = new Date(monday.getTime() + (d - 1) * 86400000);
+        const isToday = window.ymd(date) === todayYmd;
+        const cells = PERIOD_SLOTS.map(p => {
+          const x = byPeriod.get(p);
+          const changed = diffMap.has(d + '|' + p);
+          if (!x) {
+            return `<td style="border:1px solid #F0F0F4;padding:7px 2px;text-align:center;font-size:12px;color:#C5C5D0">—</td>`;
+          }
+          const bg = changed ? 'background:#FFF3C2' : (isToday ? 'background:#FFF0F6' : 'background:#fff');
+          const star = changed ? ' <span style="color:#E08900" title="与默认课表不同">★</span>' : '';
+          return `<td style="border:1px solid #F0F0F4;padding:7px 2px;text-align:center;font-size:12px;${bg}"
+            title="${esc(x.name)}（${x.start}-${x.end}）">${esc(shortName(x))}${star}</td>`;
+        }).join('');
+        return `<tr>
+          <td style="border:1px solid #F0F0F4;padding:6px;background:${isToday ? '#FFD6E8' : '#FAFAFA'};font-size:12px;font-weight:700;${isToday ? 'color:#C75A92' : 'color:#3A3A4E'}">
+            周${dayNames[d]}<br/><span style="font-size:10px;font-weight:400">${date.getMonth() + 1}.${date.getDate()}</span>
+          </td>
+          ${cells}
+        </tr>`;
+      }).join('');
+
+      const badge = (no === curNo) ? '<span style="background:#B5EAD7;color:#2D7A55;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">本周</span>' : '';
+      const ovBadge = overridden ? '<span style="background:#FFE9A8;color:#8B6000;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">📌 临时课表</span>' : '';
+
+      return `
+        <div style="padding:14px 16px;border-bottom:1px solid #eee;background:linear-gradient(135deg,#A5D8FF,#B5EAD7)">
+          <div style="font-size:16px;font-weight:800;color:#1B4F7A">🗓 学期课表 · ${esc(window.SEMESTER.name)}</div>
+          <div style="font-size:12px;color:#2F5D74;margin-top:3px">翻看学期内任意一周的课程安排</div>
+        </div>
+        <div style="padding:12px 14px;max-height:62vh;overflow-y:auto">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn-sm btn-gray" id="semPrev" ${no <= 1 ? 'disabled' : ''}>← 上一周</button>
+            <select id="semJump" style="padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;flex:1;min-width:130px;max-width:200px">
+              ${weeks.map(x => `<option value="${x.no}" ${x.no === no ? 'selected' : ''}>第${x.no}周（${x.label}）${x.overridden ? ' 📌' : ''}</option>`).join('')}
+            </select>
+            <button class="btn-sm btn-gray" id="semNext" ${no >= weeks.length ? 'disabled' : ''}>下一周 →</button>
+            ${curNo ? `<button class="btn-sm btn-purple" id="semToday">本周</button>` : ''}
+          </div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:2px">第 ${no} 周 / 共 ${weeks.length} 周 <span style="font-weight:400;color:#7A7A8C">（${w.label}）</span></div>
+          <div style="display:flex;gap:6px;margin-bottom:10px">${badge}${ovBadge}</div>
+          <div style="overflow-x:auto;border-radius:10px;border:1px solid #eee">
+            <table style="width:100%;border-collapse:collapse;min-width:430px">
+              <thead><tr style="background:#F8F8F8">
+                <th style="padding:6px;font-size:12px;width:52px"></th>${headCells}
+              </tr></thead>
+              <tbody>${bodyRows}</tbody>
+            </table>
+          </div>
+          <div style="font-size:11px;color:#7A7A8C;margin-top:8px;line-height:1.7">
+            每天 8:00 🚩 升旗/阳光体育 · 10:25/14:50 👀 眼保健操 · 12:10 🍱 午餐午休<br/>
+            节次时间：${PERIOD_SLOTS.map(p => p.replace('第', '').replace('节', '') + '节 ' + PERIOD_TIMES[p]).join(' · ')}
+            ${overridden ? '<br/><span style="color:#8B6000">★ 标记 = 与默认课表不同的课</span>' : ''}
+          </div>
+          ${diffList.length ? `<div style="margin-top:8px;font-size:12px;color:#8B4513;line-height:1.7;background:rgba(255,230,150,0.35);padding:6px 10px;border-radius:8px">
+            <b>与默认课表不同之处：</b><br/>
+            ${diffList.map(x => `• ${x.dayName} ${x.period}：${esc(x.defaultName)} → <b style="color:#C75A92">${esc(x.overrideName)}</b>`).join('<br/>')}
+          </div>` : ''}
+        </div>
+        <div class="act-foot">
+          <button class="btn-sm btn-yellow" id="semEditThisWeek">✏️ 编辑该周课表</button>
+          <button class="btn-sm btn-gray" data-back>关闭</button>
+        </div>
+      `;
+    }
+
+    function bind() {
+      const modal = document.querySelector('#modalLayer');
+      const prev = modal.querySelector('#semPrev');
+      const next = modal.querySelector('#semNext');
+      if (prev) prev.addEventListener('click', () => { if (no > 1) { no--; refresh(); } });
+      if (next) next.addEventListener('click', () => { if (no < weeks.length) { no++; refresh(); } });
+      const jump = modal.querySelector('#semJump');
+      if (jump) jump.addEventListener('change', () => { no = parseInt(jump.value, 10) || 1; refresh(); });
+      const todayBtn = modal.querySelector('#semToday');
+      if (todayBtn) todayBtn.addEventListener('click', () => { no = curNo || 1; refresh(); });
+      const editBtn = modal.querySelector('#semEditThisWeek');
+      if (editBtn) editBtn.addEventListener('click', () => openScheduleEditor(weeks[no - 1].key));
+      const back = modal.querySelector('[data-back]');
+      if (back) back.addEventListener('click', () => window.closeModal());
+    }
+
+    function refresh() { window.openModal(build()); bind(); }
+
+    refresh();
+  }
+
   window.openScheduleEditor = openScheduleEditor;
+  window.openSemesterSchedule = openSemesterSchedule;
 })();
