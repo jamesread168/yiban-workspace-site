@@ -174,7 +174,7 @@ function render() {
   $('#content').innerHTML = fn();
   bindViewEvents();
   updateSidebar();
-  if (state.view === 'sync') { renderQr(); renderHotspotQr(); }
+  if (state.view === 'sync') renderQr();
 }
 
 function updateSidebar() {
@@ -587,29 +587,6 @@ function bindSync() {
     });
   }
 
-  // 复制公网（Vercel）访问地址
-  const copyPublicUrlBtn = $('#copyPublicUrlBtn');
-  if (copyPublicUrlBtn) {
-    copyPublicUrlBtn.addEventListener('click', () => {
-      copyText('https://20260902101109.vercel.app', '公网地址已复制');
-    });
-  }
-
-  // 手动设置电脑 IP（自动探测失败时用）
-  const setIpBtn = $('#setIpBtn');
-  if (setIpBtn) {
-    setIpBtn.addEventListener('click', () => {
-      const v = $('#manualIpInput').value.trim();
-      if (!v) { showToast('请输入电脑 IP，如 192.168.1.5'); return; }
-      setManualIP(v);
-      showToast('已设置 IP：' + v);
-      renderQr();
-    });
-    $('#manualIpInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') setIpBtn.click();
-    });
-  }
-
   $('#joinRoomBtn').addEventListener('click', () => {
     const code = $('#joinRoomInput').value.trim().toUpperCase();
     if (code.length < 4) { showToast('请输入正确的房间号'); return; }
@@ -711,7 +688,7 @@ async function renderQr() {
   if (!base) {
     box.innerHTML = `<div style="padding:16px 10px;text-align:center;font-size:12px;color:#7A7A8C;line-height:1.6">
       <div style="font-size:28px;margin-bottom:6px">📶</div>
-      未能自动获取<br/>请在下方填写电脑 IP
+      未能自动获取访问地址<br/>请直接复制左侧网址
     </div>`;
     if (txt) txt.textContent = '未获取';
     return;
@@ -741,86 +718,6 @@ async function renderQr() {
     txt.style.cursor = 'pointer';
     txt.title = '点击复制';
     txt.onclick = () => copyText(full, '地址已复制：' + full);
-  }
-  // 把探测到的 IP 作为提示，方便用户核对/修改
-  const ipInput = $('#manualIpInput');
-  if (ipInput && !localStorage.getItem('yiban-manual-ip')) {
-    ipInput.placeholder = `当前使用：${url.hostname}`;
-  }
-}
-
-// 热点专用二维码：Windows 移动热点固定地址 192.168.137.1
-function renderHotspotQr() {
-  const box = $('#hotspotQrBox');
-  if (!box) return;
-  const url = new URL('http://192.168.137.1:8080/');
-  url.searchParams.set('room', state.data.roomId);
-  const full = url.toString();
-  box.innerHTML = '';
-  const img = new Image();
-  img.alt = '热点扫码';
-  img.style.width = '100%';
-  img.style.height = '100%';
-  img.onerror = () => {
-    box.innerHTML = `<div style="padding:6px 4px;text-align:center;font-size:10px;color:#7A7A8C;line-height:1.5">二维码加载失败<br/>手动输入<br/>192.168.137.1:8080</div>`;
-  };
-  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(full)}`;
-  box.appendChild(img);
-
-  const btn = $('#copyHotspotUrlBtn');
-  if (btn && !btn._bound) {
-    btn._bound = true;
-    btn.addEventListener('click', () => copyText(full, '热点地址已复制：' + full));
-  }
-}
-
-// 公网直连：把服务端探测到的公网 IPv6 地址与二维码渲染出来（手机 5G 可直接打开）
-async function renderPublicAccess() {
-  const box = $('#publicQrBox');
-  const txt = $('#publicUrlText');
-  const tip = $('#publicTip');
-  if (!box && !txt) return;
-
-  const info = (window.CloudSync && window.CloudSync.getServerInfo)
-    ? await window.CloudSync.getServerInfo() : null;
-
-  if (!info || !info.ipv6) {
-    if (txt) txt.textContent = '未检测到公网 IPv6';
-    if (tip) tip.innerHTML = '当前页面不是由 <code>server.js</code> 提供，或本机没有公网 IPv6。<br/>' +
-      '可改用下方「电脑热点」或「同一 WiFi」方式。';
-    if (box) box.innerHTML = '<div style="padding:10px;text-align:center;font-size:11px;color:#7A7A8C;line-height:1.6">暂无<br/>公网地址</div>';
-    return;
-  }
-
-  const url = `http://[${info.ipv6}]:${info.port || 8080}/?room=${encodeURIComponent(state.data.roomId)}`;
-
-  if (txt) {
-    txt.textContent = url;
-    txt.style.cursor = 'pointer';
-    txt.title = '点击复制';
-    txt.onclick = () => copyText(url, '公网地址已复制：' + url);
-  }
-  if (tip) {
-    tip.innerHTML = '手机 <b>不用连热点、不用同一个 WiFi</b>，用 5G 流量直接打开，所有设备共用同一份数据。<br/>' +
-      '<span style="color:#C75A92">若打不开，多半是路由器拦了 IPv6 入站</span>：进路由器关掉「IPv6 防火墙 / SPI」，或先用电脑热点。';
-  }
-  if (box) {
-    box.innerHTML = '';
-    const img = new Image();
-    img.alt = '公网直连扫码';
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.onerror = () => {
-      box.innerHTML = '<div style="padding:10px;text-align:center;font-size:10px;color:#7A7A8C;line-height:1.5">二维码加载失败<br/>请手动输入左侧地址</div>';
-    };
-    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-    box.appendChild(img);
-  }
-
-  const btn = $('#copyPublic6Btn');
-  if (btn && !btn._bound) {
-    btn._bound = true;
-    btn.addEventListener('click', () => copyText(url, '公网地址已复制：' + url));
   }
 }
 
@@ -1063,12 +960,9 @@ function bindCloud() {
   if (!sel) return;
 
   const cfg = window.CloudSync.getConfig();
-  if (cfg && cfg.provider) {
-    sel.value = cfg.provider;
-    renderCloudFields(cfg.provider, cfg);
-  }
-
-  sel.addEventListener('change', () => renderCloudFields(sel.value, null));
+  // 本页只支持 GitHub 仓库一种云端；旧配置是其他 provider 时按未配置处理
+  sel.value = 'github';
+  renderCloudFields('github', cfg && cfg.provider === 'github' ? cfg : null);
 
   const saveBtn = $('#saveCloudBtn');
   if (saveBtn) {
@@ -1219,7 +1113,6 @@ async function initCloud() {
     window.CloudSync.connect().then(ok => { if (ok) startCloudAuto(); });
   }
   setTimeout(updateCloudStatus, 400);
-  renderPublicAccess();
 }
 
 // ============ 时钟 & 天气 ============
