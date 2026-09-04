@@ -331,6 +331,45 @@ function getWeekOverrideDiff(mondayDate) {
   return diffs;
 }
 
+// ============ 学期周历（学期课表查询用） ============
+const SEMESTER = {
+  name: '2026-2027学年 第一学期',
+  start: '2026-08-31', // 第 1 周周一（8.31 报到，9.1 正式开学）
+  end: '2027-01-31',   // 学期范围（覆盖到寒假前，仅用于计算周数）
+};
+
+// 学期内所有周的列表：[{no, monday, key, label, overridden}]
+function getSemesterWeeks() {
+  function semParse(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  const start = semParse(SEMESTER.start);
+  const end = semParse(SEMESTER.end);
+  const weeks = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    const key = ymd(cur);
+    const sunday = new Date(cur.getTime() + 6 * 86400000);
+    weeks.push({
+      no: weeks.length + 1,
+      monday: new Date(cur),
+      key,
+      label: (cur.getMonth() + 1) + '.' + cur.getDate() + ' - ' + (sunday.getMonth() + 1) + '.' + sunday.getDate(),
+      overridden: !!WEEK_OVERRIDES[key],
+    });
+    cur.setDate(cur.getDate() + 7);
+  }
+  return weeks;
+}
+
+// 某日期是学期第几周（不在学期内返回 0）
+function getSemesterWeekNo(date) {
+  if (!date) date = new Date();
+  const monday = getMondayOfWeek(date);
+  const key = ymd(monday);
+  const weeks = getSemesterWeeks();
+  const w = weeks.find(x => x.key === key);
+  return w ? w.no : 0;
+}
+
 // ============ 暴露到全局 ============
 window.ScheduleData = DEFAULT_SCHEDULE;   // 兼容旧 API
 window.DefaultSchedule = DEFAULT_SCHEDULE;
@@ -347,4 +386,7 @@ window.saveWeekOverride = saveWeekOverride;
 window.clearWeekOverride = clearWeekOverride;
 window.getAllOverrideKeys = getAllOverrideKeys;
 window.getWeekOverrideDiff = getWeekOverrideDiff;
+window.SEMESTER = SEMESTER;
+window.getSemesterWeeks = getSemesterWeeks;
+window.getSemesterWeekNo = getSemesterWeekNo;
 window.ymd = ymd;
