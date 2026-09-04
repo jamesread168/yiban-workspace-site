@@ -39,6 +39,13 @@
     // 当前周是否使用临时课表
     const isOverridden = isWeekday && (window.isCurrentWeekOverridden ? window.isCurrentWeekOverridden() : false);
     const overrideKey = isOverridden ? (window.getCurrentOverrideKey ? window.getCurrentOverrideKey() : '') : '';
+    const diffs = isOverridden && window.getWeekOverrideDiff ? window.getWeekOverrideDiff(overrideKey) : [];
+    const diffHtml = diffs.length
+      ? `<div style="margin-top:7px;font-size:12px;color:#8B4513;line-height:1.7;background:rgba(255,255,255,0.55);padding:6px 10px;border-radius:8px">
+           <b>与默认课表不同之处：</b><br/>
+           ${diffs.map(d => `• ${d.dayName} ${d.period}：${d.defaultName} → <b style="color:#C75A92">${d.overrideName}</b>`).join('<br/>')}
+         </div>`
+      : '';
 
     // 状态卡配色
     let bg, emoji, title, desc;
@@ -86,10 +93,10 @@
     const C = 2 * Math.PI * 45;
     const offset = C - (pct / 100) * C;
 
-    // 今日课表
+    // 今日课表（走周覆盖机制，临时课表也能正确显示）
     let schedHtml = '';
     if (isWeekday) {
-      const arr = window.ScheduleData[curDay] || [];
+      const arr = (window.getDaySchedule ? window.getDaySchedule(new Date()) : (window.ScheduleData[curDay] || [])) || [];
       schedHtml = arr.map((x, i) => {
         let cls = 'tl-item', tag = '';
         if (x.isBreak) cls += ' break';
@@ -154,7 +161,8 @@
           ${isOverridden ? `<div class="alert alert-warn" style="margin-bottom:12px">
             <span class="alert-emoji">📌</span>
             <div style="flex:1">本周使用 <b>临时课表</b>（周起始 ${overrideKey}）<button class="btn-sm btn-gray" id="viewDefaultBtn" style="margin-left:6px">查看默认</button></div>
-          </div>` : ''}
+          </div>
+          ${diffHtml}` : ''}
           <div class="card-title">
             📅 今日课表
             <span class="t-sub">${isOverridden ? '（临时）' : '（深圳小学 8:55 第一节）'}</span>
