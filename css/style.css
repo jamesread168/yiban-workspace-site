@@ -56,6 +56,38 @@ input, textarea, select { font-family: inherit; border: none; outline: none; }
 .weather-pill { background: var(--green); color: #1F6B4F; }
 .clock-pill { background: rgba(0,0,0,0.06); color: var(--text); font-variant-numeric: tabular-nums; }
 
+/* ==================== 保存按钮 ==================== */
+.save-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  background: linear-gradient(135deg, #C8F0DC, #6BC9A8); color: #1F6B4F;
+  border: none; cursor: pointer; transition: all .2s; flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  position: relative;
+}
+.save-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.12); }
+.save-btn:active { transform: translateY(0); }
+.save-btn .save-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #FF7AB6; box-shadow: 0 0 0 3px rgba(255,122,182,.25);
+  margin-left: 2px;
+}
+.save-btn.dirty {
+  background: linear-gradient(135deg, #FFE066, #FFB570); color: #6B3A00;
+  animation: saveDirtyPulse 1.6s ease-in-out infinite;
+}
+.save-btn.saving {
+  background: linear-gradient(135deg, #A5D8FF, #5BA8E5); color: #1B4F7A;
+  cursor: wait;
+}
+.save-btn.error {
+  background: linear-gradient(135deg, #FF8B8B, #FF7AB6); color: white;
+}
+@keyframes saveDirtyPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,182,80,.55); }
+  50%      { box-shadow: 0 0 0 8px rgba(255,182,80,0); }
+}
+
 /* ==================== 布局 ==================== */
 .layout {
   display: grid; grid-template-columns: var(--sidebar-w) 1fr;
@@ -681,6 +713,36 @@ input, textarea, select { font-family: inherit; border: none; outline: none; }
   font-weight: 600; z-index: 10001; transition: transform .3s; pointer-events: none; font-size: 15px;
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ==================== 云端更新提示横幅 ==================== */
+.cloud-update-banner {
+  position: fixed; top: 78px; right: 16px; z-index: 9999;
+  background: linear-gradient(135deg, #FFE066, #FFB570); color: #6B3A00;
+  border-radius: 14px; padding: 12px 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.18);
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 700;
+  animation: cloudBannerSlide .35s ease;
+  max-width: 320px;
+}
+@keyframes cloudBannerSlide {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+.cloud-update-banner .cu-emoji { font-size: 22px; flex-shrink: 0; }
+.cloud-update-banner .cu-text { flex: 1; line-height: 1.5; }
+.cloud-update-banner .cu-time { font-size: 11px; font-weight: 500; opacity: .75; margin-top: 2px; }
+.cloud-update-banner .cu-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 6px; }
+.cloud-update-banner .cu-actions button {
+  border: none; border-radius: 999px; padding: 6px 12px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  background: white; color: #6B3A00;
+}
+.cloud-update-banner .cu-actions button.primary { background: #6B3A00; color: white; }
+.cloud-update-banner .cu-actions button:hover { opacity: .85; }
+@media (max-width: 600px) {
+  .cloud-update-banner { left: 16px; right: 16px; max-width: none; }
+}
 
 /* ==================== 响应式 ==================== */
 @media (max-width: 900px) {
