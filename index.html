@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#FFB6D9" />
+  <title>一年级学生工作台 · 深圳 · 一（6）班</title>
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%8C%3C/text%3E%3C/svg%3E" />
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="一(6)班工作台" />
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
+</head>
+<body>
+  <!-- ============ 顶部栏 ============ -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle" id="menuToggle" aria-label="菜单">☰</button>
+      <div class="avatar" id="avatar"><span class="avatar-emoji">🐰</span></div>
+      <div class="welcome">
+        <div class="hello" id="greeting">早上好</div>
+        <div class="nickname" id="nickname">小朋友，今天也要加油哦～</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="pill star-pill" title="累计星星">
+        <span class="pill-icon">⭐</span><span id="topStars">0</span>
+      </div>
+      <div class="pill city-pill">
+        <span class="pill-icon">📍</span><span>深圳</span>
+      </div>
+      <div class="pill weather-pill" id="weatherWidget">
+        <span id="weatherEmoji">⛅</span><span id="weatherTemp">--</span>
+      </div>
+      <div class="pill clock-pill"><span id="topClock">--:--:--</span></div>
+    </div>
+  </header>
+
+  <!-- ============ 主体：侧边栏 + 内容 ============ -->
+  <div class="layout">
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">🏠</span><span class="nav-label">今日概览</span>
+          <span class="nav-badge" id="navBadgeDash">0</span>
+        </button>
+        <button class="nav-item" data-view="study">
+          <span class="nav-icon">📚</span><span class="nav-label">学科学习</span>
+          <span class="nav-badge" id="navBadgeStudy">0</span>
+        </button>
+        <button class="nav-item" data-view="habits">
+          <span class="nav-icon">✅</span><span class="nav-label">习惯打卡</span>
+          <span class="nav-badge" id="navBadgeHabit">0</span>
+        </button>
+        <button class="nav-item" data-view="mood">
+          <span class="nav-icon">😊</span><span class="nav-label">心情日记</span>
+        </button>
+        <button class="nav-item" data-view="health">
+          <span class="nav-icon">🏃</span><span class="nav-label">运动健康</span>
+        </button>
+        <button class="nav-item" data-view="reading">
+          <span class="nav-icon">📖</span><span class="nav-label">阅读记录</span>
+        </button>
+        <button class="nav-item" data-view="goals">
+          <span class="nav-icon">🎯</span><span class="nav-label">目标奖励</span>
+        </button>
+        <button class="nav-item" data-view="parent">
+          <span class="nav-icon">👨‍👩‍👧</span><span class="nav-label">家长中心</span>
+        </button>
+        <button class="nav-item" data-view="stats">
+          <span class="nav-icon">📊</span><span class="nav-label">数据看板</span>
+        </button>
+        <button class="nav-item" data-view="books">
+          <span class="nav-icon">📚</span><span class="nav-label">绘本馆</span>
+        </button>
+        <button class="nav-item" data-view="sync">
+          <span class="nav-icon">📱</span><span class="nav-label">设备同步</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="streak-mini">
+          <span class="sm-num" id="sideStreak">0</span>
+          <span class="sm-label">连续打卡</span>
+        </div>
+        <div class="side-progress">
+          <div class="side-progress-label">今日完成度</div>
+          <div class="side-progress-bar"><span id="sideProgressBar"></span></div>
+          <div class="side-progress-text" id="sideProgressText">0%</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="content" id="content">
+      <!-- 各视图由 JS 渲染 -->
+    </main>
+  </div>
+
+  <!-- 弹窗层 -->
+  <div class="modal-layer" id="modalLayer">
+    <div class="modal-mask"></div>
+    <div class="modal-box">
+      <button class="modal-close" id="modalClose">×</button>
+      <div class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- 撒花 + Toast -->
+  <div class="confetti-layer" id="confettiLayer"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="./js/data.js"></script>
+  <script src="./js/schedule.js"></script>
+  <script src="./js/sync.js"></script>
+  <script src="./js/views.js"></script>
+  <script src="./js/study.js"></script>
+  <script src="./js/schedule-edit.js"></script>
+  <script src="./js/cloud-sync.js"></script>
+  <script src="./js/app.js"></script>
+  <script>
+    // PWA：离线缓存注册（手机加载一次后，5G/无网络也能秒开）
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
