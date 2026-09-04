@@ -482,6 +482,16 @@ function bindViewEvents() {
     });
   }
 
+  // ---- 课前/课后资料 ----
+  const matBrowserBtn = $('#matBrowserBtn');
+  if (matBrowserBtn) {
+    matBrowserBtn.addEventListener('click', () => {
+      if (window.Materials) window.Materials.openBrowser();
+      else showToast('资料模块未加载');
+    });
+  }
+  bindMatChips(content);
+
   // ---- 同步 ----
   if ($('#copyRoomBtn')) bindSync();
   // 云端同步（随时随地）
@@ -495,6 +505,7 @@ function renderScheduleFor(day) {
   const targetDate = monday ? new Date(monday.getTime() + (day - 1) * 86400000) : new Date();
   const arr = (window.getDaySchedule ? window.getDaySchedule(targetDate) : (window.ScheduleData[day] || [])) || [];
   const isToday = new Date().getDay() === day;
+  const dateKey = window.ymd ? window.ymd(targetDate) : window.todayKey();
   const html = arr.map((x, i) => {
     let cls = 'tl-item', tag = '';
     if (x.isBreak) cls += ' break';
@@ -504,13 +515,27 @@ function renderScheduleFor(day) {
       else if (status.current && status.current.index < i) cls += ' passed';
       else if (!status.current && status.next && status.next.index > i) cls += ' passed';
     }
+    const matBtn = x.isBreak ? '' :
+      `<button class="mat-chip" data-mat-date="${dateKey}" data-mat-period="${x.period}" data-mat-name="${x.name}" title="课前/课后资料">📎${window.Materials ? window.Materials.count(dateKey, x.period) : 0}</button>`;
     return `<div class="${cls}">
       <div class="tl-time">${x.start}<span class="tl-period">${x.period}</span></div>
-      <div class="tl-body"><span class="tl-emoji">${x.emoji}</span><span class="tl-name">${x.name}</span>${tag}</div>
+      <div class="tl-body"><span class="tl-emoji">${x.emoji}</span><span class="tl-name">${x.name}</span>${tag}${matBtn}</div>
     </div>`;
   }).join('');
   const tl = document.querySelector('#content .timeline');
   if (tl) tl.innerHTML = html;
+  bindMatChips(tl);
+}
+
+// ============ 资料入口绑定 ============
+function bindMatChips(scope) {
+  (scope || document).querySelectorAll('.mat-chip').forEach(b => {
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (window.Materials) window.Materials.openPanel(b.dataset.matDate, b.dataset.matPeriod, b.dataset.matName);
+      else showToast('资料模块未加载');
+    });
+  });
 }
 
 // ============ 连续天数 ============
@@ -1241,6 +1266,7 @@ function init() {
   window.appConfetti = confetti;
   window.appRender = render;
   window.appAwardStars = awardStars;
+  window.appMarkDirty = markDirty;
 
   // 顶栏保存按钮
   const saveBtn = $('#saveBtn');
