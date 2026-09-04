@@ -719,11 +719,12 @@ input, textarea, select { font-family: inherit; border: none; outline: none; }
 .confetti { position: absolute; font-size: 24px; animation: confettiFall 1.6s ease-out forwards; }
 @keyframes confettiFall { 0% { transform: translateY(-30px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
 .toast {
-  position: fixed; top: 74px; left: 50%; transform: translateX(-50%) translateY(-100px);
+  position: fixed; top: 74px; left: 50%; transform: translateX(-50%) translateY(-10px);
   background: rgba(0,0,0,.85); color: white; padding: 12px 24px; border-radius: 999px;
-  font-weight: 600; z-index: 10001; transition: transform .3s; pointer-events: none; font-size: 15px;
+  font-weight: 600; z-index: 10001; transition: opacity .3s, transform .3s; pointer-events: none; font-size: 15px;
+  opacity: 0; visibility: hidden;
 }
-.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
 /* ==================== 云端更新提示横幅 ==================== */
 .cloud-update-banner {
