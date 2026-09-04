@@ -133,6 +133,71 @@ const WEEK_OVERRIDES = {
       { period: '第6节', start: '15:05', end: '15:45', name: '音乐', emoji: '🎵', subject: '音乐' },
     ],
   },
+
+  // 2026-2027 学年第一学期 第 2 周临时课表（9.7 ~ 9.11）
+  // 与默认课表相比：周一第6节 美术→音乐；周五第4节 音乐→美术
+  '2026-09-07': {
+    1: [ // 周一
+      { period: '升旗/阳光体育', start: '08:00', end: '08:50', name: '升旗/阳光体育', emoji: '🚩', isActivity: true },
+      { period: '第1节', start: '08:55', end: '09:35', name: '班队会/心理健康', emoji: '💗', subject: '班会' },
+      { period: '第2节', start: '09:45', end: '10:25', name: '英语', emoji: '🔤', subject: '英语' },
+      { period: '眼保健操', start: '10:25', end: '10:30', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第3节', start: '10:40', end: '11:20', name: '语文', emoji: '📖', subject: '语文' },
+      { period: '第4节', start: '11:30', end: '12:10', name: '体育与健康', emoji: '⚽', subject: '体育' },
+      { period: '午餐午休', start: '12:10', end: '14:00', name: '午餐午休', emoji: '🍱', isBreak: true },
+      { period: '第5节', start: '14:10', end: '14:50', name: '数学', emoji: '🔢', subject: '数学' },
+      { period: '眼保健操', start: '14:50', end: '14:55', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第6节', start: '15:05', end: '15:45', name: '音乐', emoji: '🎵', subject: '音乐' },
+    ],
+    2: [ // 周二
+      { period: '升旗/阳光体育', start: '08:00', end: '08:50', name: '升旗/阳光体育', emoji: '🚩', isActivity: true },
+      { period: '第1节', start: '08:55', end: '09:35', name: '语文', emoji: '📖', subject: '语文' },
+      { period: '第2节', start: '09:45', end: '10:25', name: '语文', emoji: '📖', subject: '语文' },
+      { period: '眼保健操', start: '10:25', end: '10:30', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第3节', start: '10:40', end: '11:20', name: '体育与健康', emoji: '⚽', subject: '体育' },
+      { period: '第4节', start: '11:30', end: '12:10', name: '劳动', emoji: '🧹', subject: '劳动' },
+      { period: '午餐午休', start: '12:10', end: '14:00', name: '午餐午休', emoji: '🍱', isBreak: true },
+      { period: '第5节', start: '14:10', end: '14:50', name: '音乐', emoji: '🎵', subject: '音乐' },
+      { period: '眼保健操', start: '14:50', end: '14:55', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第6节', start: '15:05', end: '15:45', name: '道德与法治', emoji: '⚖️', subject: '道德' },
+    ],
+    3: [ // 周三
+      { period: '升旗/阳光体育', start: '08:00', end: '08:50', name: '升旗/阳光体育', emoji: '🚩', isActivity: true },
+      { period: '第1节', start: '08:55', end: '09:35', name: '语文', emoji: '📖', subject: '语文' },
+      { period: '第2节', start: '09:45', end: '10:25', name: '美术', emoji: '🎨', subject: '美术' },
+      { period: '眼保健操', start: '10:25', end: '10:30', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第3节', start: '10:40', end: '11:20', name: '数学', emoji: '🔢', subject: '数学' },
+      { period: '第4节', start: '11:30', end: '12:10', name: '书法', emoji: '✍️', subject: '书法' },
+      { period: '午餐午休', start: '12:10', end: '14:00', name: '午餐午休', emoji: '🍱', isBreak: true },
+      { period: '第5节', start: '14:10', end: '14:50', name: '英语', emoji: '🔤', subject: '英语' },
+      { period: '眼保健操', start: '14:50', end: '14:55', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第6节', start: '15:05', end: '15:45', name: '道德与法治', emoji: '⚖️', subject: '道德' },
+    ],
+    4: [ // 周四
+      { period: '升旗/阳光体育', start: '08:00', end: '08:50', name: '升旗/阳光体育', emoji: '🚩', isActivity: true },
+      { period: '第1节', start: '08:55', end: '09:35', name: '语文', emoji: '📖', subject: '语文' },
+      { period: '第2节', start: '09:45', end: '10:25', name: '体育与健康', emoji: '⚽', subject: '体育' },
+      { period: '眼保健操', start: '10:25', end: '10:30', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第3节', start: '10:40', end: '11:20', name: '语文', emoji: '📖', subject: '语文' },
+      { period: '第4节', start: '11:30', end: '12:10', name: '综合实践', emoji: '🛠️', subject: '实践' },
+      { period: '午餐午休', start: '12:10', end: '14:00', name: '午餐午休', emoji: '🍱', isBreak: true },
+      { period: '第5节', start: '14:10', end: '14:50', name: '数学', emoji: '🔢', subject: '数学' },
+      { period: '眼保健操', start: '14:50', end: '14:55', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第6节', start: '15:05', end: '15:45', name: '英语', emoji: '🔤', subject: '英语' },
+    ],
+    5: [ // 周五
+      { period: '升旗/阳光体育', start: '08:00', end: '08:50', name: '升旗/阳光体育', emoji: '🚩', isActivity: true },
+      { period: '第1节', start: '08:55', end: '09:35', name: '科学', emoji: '🔬', subject: '科学' },
+      { period: '第2节', start: '09:45', end: '10:25', name: '语文', emoji: '📖', subject: '语文' },
+      { period: '眼保健操', start: '10:25', end: '10:30', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第3节', start: '10:40', end: '11:20', name: '语文', emoji: '📖', subject: '语文' },
+      { period: '第4节', start: '11:30', end: '12:10', name: '美术', emoji: '🎨', subject: '美术' },
+      { period: '午餐午休', start: '12:10', end: '14:00', name: '午餐午休', emoji: '🍱', isBreak: true },
+      { period: '第5节', start: '14:10', end: '14:50', name: '体育与健康', emoji: '⚽', subject: '体育' },
+      { period: '眼保健操', start: '14:50', end: '14:55', name: '眼保健操', emoji: '👀', isBreak: true },
+      { period: '第6节', start: '15:05', end: '15:45', name: '围棋', emoji: '♟️', subject: '围棋' },
+    ],
+  },
 };
 
 // 打卡项配置
@@ -236,6 +301,36 @@ function getAllOverrideKeys() {
   return Object.keys(WEEK_OVERRIDES).sort();
 }
 
+// 对比某周临时课表与默认课表的差异（用于 UI 特别提示）
+function getWeekOverrideDiff(mondayDate) {
+  const key = typeof mondayDate === 'string' ? mondayDate : ymd(mondayDate);
+  const ov = WEEK_OVERRIDES[key];
+  if (!ov) return [];
+  const diffs = [];
+  const dayNames = ['', '周一', '周二', '周三', '周四', '周五'];
+  for (let d = 1; d <= 5; d++) {
+    const def = DEFAULT_SCHEDULE[d] || [];
+    const cur = ov[d] || [];
+    const defMap = new Map(def.map(x => [x.period, x.name]));
+    const curMap = new Map(cur.map(x => [x.period, x.name]));
+    const allPeriods = Array.from(new Set([...defMap.keys(), ...curMap.keys()]));
+    for (const period of allPeriods) {
+      const a = defMap.get(period);
+      const b = curMap.get(period);
+      if (a !== b) {
+        diffs.push({
+          day: d,
+          dayName: dayNames[d],
+          period,
+          defaultName: a || '(空)',
+          overrideName: b || '(空)',
+        });
+      }
+    }
+  }
+  return diffs;
+}
+
 // ============ 暴露到全局 ============
 window.ScheduleData = DEFAULT_SCHEDULE;   // 兼容旧 API
 window.DefaultSchedule = DEFAULT_SCHEDULE;
@@ -251,4 +346,5 @@ window.getCurrentOverrideKey = getCurrentOverrideKey;
 window.saveWeekOverride = saveWeekOverride;
 window.clearWeekOverride = clearWeekOverride;
 window.getAllOverrideKeys = getAllOverrideKeys;
+window.getWeekOverrideDiff = getWeekOverrideDiff;
 window.ymd = ymd;
