@@ -490,6 +490,13 @@ function bindViewEvents() {
       else showToast('资料模块未加载');
     });
   }
+  const subjectMatBtn = $('#subjectMatBtn');
+  if (subjectMatBtn) {
+    subjectMatBtn.addEventListener('click', () => {
+      if (window.Materials && window.Materials.openSubjectBrowser) window.Materials.openSubjectBrowser();
+      else showToast('资料模块未加载');
+    });
+  }
   bindMatChips(content);
 
   // ---- 同步 ----
