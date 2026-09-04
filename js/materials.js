@@ -109,6 +109,17 @@
     if (!r.ok) throw new Error('删除失败 HTTP ' + r.status);
   }
 
+  // ---------- 上传后立即同步索引 ----------
+  // 文件本体上传成功后已在云端，索引必须马上跟上，
+  // 否则忘了点「保存」其他设备就永远看不到这个文件
+  async function autoSyncIndex() {
+    if (ghCfg() && typeof window.appSaveAll === 'function') {
+      try { await window.appSaveAll(); return true; } catch (e) { /* saveAll 内部已提示 */ }
+    }
+    if (window.appMarkDirty) window.appMarkDirty();
+    return false;
+  }
+
   // ---------- 上传 ----------
   async function upload(dateKey, period, kind, file) {
     const cfg = ghCfg();
@@ -143,7 +154,7 @@
     list.push(entry);
     setIdx(dateKey, period, list);
     window.SyncAPI.saveData(st());
-    if (window.appMarkDirty) window.appMarkDirty();
+    await autoSyncIndex();
     return entry;
   }
 
@@ -415,7 +426,7 @@
         catch (e) { alert(f.name + '\n' + e.message); }
       }
       openBrowser('subject');
-      toast('上传完成 ✅ 记得点右上角 💾 保存，同步到其他设备');
+      toast(ghCfg() ? '上传完成 ✅ 已自动同步到其他设备' : '上传完成 ✅ 记得点右上角 💾 保存，同步到其他设备');
     }));
   }
 
@@ -477,7 +488,7 @@
     list.push(entry);
     setSubjectIdx(subject, list);
     window.SyncAPI.saveData(st());
-    if (window.appMarkDirty) window.appMarkDirty();
+    await autoSyncIndex();
     return entry;
   }
 
