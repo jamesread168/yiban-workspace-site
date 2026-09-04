@@ -3,7 +3,7 @@
  * 策略：stale-while-revalidate —— 优先秒开缓存，后台静默更新
  * 效果：手机加载过一次后，即使 5G 流量下被拦/无网络，也能正常打开工作台
  */
-const CACHE_NAME = 'yiban-workspace-v4';
+const CACHE_NAME = 'yiban-workspace-v5';
 const CORE_FILES = [
   './',
   './index.html',
