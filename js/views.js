@@ -170,6 +170,7 @@
             📅 今日课表
             <span class="t-sub">${isOverridden ? '（临时）' : '（深圳小学 8:55 第一节）'}</span>
             <button class="btn-sm btn-purple" id="matBrowserBtn" style="margin-left:auto">🗄 资料库</button>
+            <button class="btn-sm btn-green" id="subjectMatBtn" style="margin-left:6px">📚 科目资料</button>
             <button class="btn-sm btn-yellow" id="uploadScheduleBtn" style="margin-left:6px">📤 上传课表</button>
           </div>
           <div class="day-tabs">
