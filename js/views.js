@@ -921,7 +921,7 @@
       </div>
 
       <div class="card">
-        <div class="card-title">⚙️ 云端配置 <span class="t-sub">（GitHub 仓库）</span></div>
+        <div class="card-title">⚙️ 云端配置 <span class="t-sub">（GitHub 仓库 · 已内置，打开即自动连接）</span></div>
         <input type="hidden" id="cloudProvider" value="github">
         <div id="cloudFields"></div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
