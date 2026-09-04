@@ -97,6 +97,7 @@
     let schedHtml = '';
     if (isWeekday) {
       const arr = (window.getDaySchedule ? window.getDaySchedule(new Date()) : (window.ScheduleData[curDay] || [])) || [];
+      const dateKey = todayKey();
       schedHtml = arr.map((x, i) => {
         let cls = 'tl-item', tag = '';
         if (x.isBreak) cls += ' break';
@@ -104,9 +105,11 @@
         else if (status.next && status.next.index === i) { cls += ' next'; tag = '<span class="tl-tag">下节课</span>'; }
         else if (status.current && status.current.index < i) cls += ' passed';
         else if (!status.current && status.next && status.next.index > i) cls += ' passed';
+        const matBtn = x.isBreak ? '' :
+          `<button class="mat-chip" data-mat-date="${dateKey}" data-mat-period="${x.period}" data-mat-name="${x.name}" title="课前/课后资料">📎${window.Materials ? window.Materials.count(dateKey, x.period) : 0}</button>`;
         return `<div class="${cls}">
           <div class="tl-time">${x.start}<span class="tl-period">${x.period}</span></div>
-          <div class="tl-body"><span class="tl-emoji">${x.emoji}</span><span class="tl-name">${x.name}</span>${tag}</div>
+          <div class="tl-body"><span class="tl-emoji">${x.emoji}</span><span class="tl-name">${x.name}</span>${tag}${matBtn}</div>
         </div>`;
       }).join('');
     } else {
@@ -166,7 +169,8 @@
           <div class="card-title">
             📅 今日课表
             <span class="t-sub">${isOverridden ? '（临时）' : '（深圳小学 8:55 第一节）'}</span>
-            <button class="btn-sm btn-yellow" id="uploadScheduleBtn" style="margin-left:auto">📤 上传课表</button>
+            <button class="btn-sm btn-purple" id="matBrowserBtn" style="margin-left:auto">🗄 资料库</button>
+            <button class="btn-sm btn-yellow" id="uploadScheduleBtn" style="margin-left:6px">📤 上传课表</button>
           </div>
           <div class="day-tabs">
             ${[1,2,3,4,5].map(d => `<button class="day-tab ${d === curDay ? 'active' : ''}" data-day="${d}">周${['','一','二','三','四','五','六'][d]}</button>`).join('')}
