@@ -482,6 +482,15 @@ function bindViewEvents() {
     });
   }
 
+  // ---- 学期课表浏览（按周查询整学期课程）----
+  const semBtn = $('#semesterBtn');
+  if (semBtn) {
+    semBtn.addEventListener('click', () => {
+      if (window.openSemesterSchedule) window.openSemesterSchedule();
+      else showToast('学期课表未加载');
+    });
+  }
+
   // ---- 课前/课后资料 ----
   const matBrowserBtn = $('#matBrowserBtn');
   if (matBrowserBtn) {
