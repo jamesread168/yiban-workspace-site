@@ -11,6 +11,7 @@
  * 入口：
  *  - 今日课表时间轴每节课上的 📎 按钮（按日期+节次定位）
  *  - 课表卡片右上角「资料库」按钮（浏览全部日期的资料）
+ *  - 课表卡片右上角「科目资料」按钮（按科目归档，不限于某节课）
  */
 (function () {
   const INLINE_LIMIT = 300 * 1024;   // 内联存储上限 300KB
@@ -350,10 +351,213 @@
     }));
   }
 
+  // ============ 科目资料（不限于每节课）============
+  // 索引存 st().subjectMaterials = { '语文': [entry...], ... }
+  // 文件本体：github 后端 → 数据仓库 materials/subjects/科目/ 目录；未配置 → base64 内联
+  const SUBJECTS = [
+    { name: '语文', emoji: '📖' },
+    { name: '数学', emoji: '🔢' },
+    { name: '英语', emoji: '🔤' },
+    { name: '音乐', emoji: '🎵' },
+    { name: '体育与健康', emoji: '⚽' },
+    { name: '美术', emoji: '🎨' },
+    { name: '科学', emoji: '🔬' },
+    { name: '道德与法治', emoji: '⚖️' },
+    { name: '书法', emoji: '✍️' },
+    { name: '劳动', emoji: '🧹' },
+    { name: '综合实践', emoji: '🛠️' },
+  ];
+
+  function subjectIdx(subject) {
+    const m = st().subjectMaterials || {};
+    return m[subject] || [];
+  }
+  function setSubjectIdx(subject, list) {
+    if (!st().subjectMaterials) st().subjectMaterials = {};
+    st().subjectMaterials[subject] = list;
+  }
+
+  async function uploadSubject(subject, file) {
+    const cfg = ghCfg();
+    if (!cfg && file.size > INLINE_LIMIT) {
+      throw new Error('文件 ' + fmtSize(file.size) + ' 超过内联上限 300KB。\n请在「设备同步」页配置 GitHub 云端后上传大文件');
+    }
+    if (cfg && file.size > GH_LIMIT) throw new Error('文件超过 20MB 上限');
+    if (cfg && file.size > 5 * 1024 * 1024) toast('大文件上传中，请耐心等待…');
+
+    const buf = await file.arrayBuffer();
+    const entry = {
+      id: 'sm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      name: file.name,
+      size: file.size,
+      type: file.type || 'application/octet-stream',
+      uploadedAt: Date.now(),
+      storage: cfg ? 'github' : 'inline',
+    };
+
+    if (cfg) {
+      const dir = String(cfg.path || 'data').replace(/^\/+|\/+$/g, '');
+      entry.path = (dir ? dir + '/' : '') + 'materials/subjects/' + safeName(subject) + '/' +
+        Date.now() + '-' + safeName(file.name);
+      const j = await ghPut(entry.path, bufToB64(buf), 'subject material: ' + subject);
+      entry.sha = j && j.content ? j.content.sha : null;
+    } else {
+      entry.dataUrl = 'data:' + entry.type + ';base64,' + bufToB64(buf);
+    }
+
+    const list = subjectIdx(subject).slice();
+    list.push(entry);
+    setSubjectIdx(subject, list);
+    window.SyncAPI.saveData(st());
+    if (window.appMarkDirty) window.appMarkDirty();
+    return entry;
+  }
+
+  async function removeSubject(subject, id) {
+    const list = subjectIdx(subject);
+    const entry = list.find(x => x.id === id);
+    if (!entry) return;
+    if (!confirm('确定删除「' + entry.name + '」？')) return;
+    try {
+      if (entry.storage === 'github' && entry.path) await ghDelete(entry.path, entry.sha);
+    } catch (e) {
+      if (!String(e.message).includes('404')) { toast('云端删除失败：' + e.message); return; }
+    }
+    setSubjectIdx(subject, list.filter(x => x.id !== id));
+    window.SyncAPI.saveData(st());
+    if (window.appMarkDirty) window.appMarkDirty();
+  }
+
+  function subjectFileListHtml(subject) {
+    const list = subjectIdx(subject).slice().sort((a, b) => b.uploadedAt - a.uploadedAt);
+    if (!list.length) return '<div style="font-size:12px;color:#9A9AAB;padding:4px 0">暂无资料</div>';
+    return '<div style="display:flex;flex-direction:column;gap:6px">' + list.map(e => `
+      <div style="display:flex;align-items:center;gap:8px;background:#FAFAF7;border:1px solid #EEE;border-radius:10px;padding:7px 10px">
+        <span style="font-size:18px">${fileIcon(e.type, e.name)}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:#3A3A4E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.name)}</div>
+          <div style="font-size:10px;color:#9A9AAB">${fmtSize(e.size)} · ${new Date(e.uploadedAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}${e.storage === 'inline' ? ' · 本机' : ''}</div>
+        </div>
+        ${isViewable(e.type) ? `<button class="btn-sm btn-green" data-smat-view="${e.id}" data-smat-s="${esc(subject)}">👁</button>` : ''}
+        <button class="btn-sm btn-yellow" data-smat-dl="${e.id}" data-smat-s="${esc(subject)}">⬇</button>
+        <button class="btn-sm btn-gray" data-smat-rm="${e.id}" data-smat-s="${esc(subject)}">🗑</button>
+      </div>`).join('') + '</div>';
+  }
+
+  function openSubjectPanel(subject, emoji) {
+    const hasCloud = !!ghCfg();
+    window.openModal(`
+      <div style="padding:14px 16px;border-bottom:1px solid #eee;background:linear-gradient(135deg,#FFD6A5,#FFB6D9)">
+        <div style="font-size:16px;font-weight:800;color:#8B4A2A">${emoji} ${esc(subject)} · 科目资料</div>
+        <div style="font-size:12px;color:#A06A4A;margin-top:3px">该科目全部资料（课件 / 音频 / 练习 / 拓展阅读…），不限于某一节课</div>
+      </div>
+      <div style="padding:14px 16px;max-height:56vh;overflow-y:auto">
+        ${hasCloud ? '' : `<div class="alert alert-warn" style="margin-bottom:10px"><span class="alert-emoji">💡</span>
+          <div>当前为<b>本机内联存储</b>（单文件 ≤300KB）。在「设备同步」页配置 GitHub 云端后，可上传 20MB 以内的大文件并多设备共享。</div></div>`}
+        <div id="smatList">${subjectFileListHtml(subject)}</div>
+        <label style="display:inline-flex;align-items:center;gap:5px;margin:12px 0 4px;padding:6px 14px;border-radius:999px;background:var(--pink);color:#8B2A5B;font-size:13px;font-weight:700;cursor:pointer">
+          ＋ 上传到本科目<input type="file" multiple hidden id="smatUp">
+        </label>
+      </div>
+      <div class="act-foot">
+        <button class="btn-sm btn-gray" data-back-list>← 返回科目列表</button>
+        <button class="btn-sm btn-gray" data-back>关闭</button>
+      </div>
+    `);
+
+    const modal = document.querySelector('#modalLayer');
+    modal.querySelector('[data-back]').addEventListener('click', () => window.closeModal());
+    modal.querySelector('[data-back-list]').addEventListener('click', () => openSubjectBrowser());
+
+    const bindList = () => {
+      modal.querySelectorAll('[data-smat-view]').forEach(b => b.addEventListener('click', () => {
+        const e = subjectIdx(b.dataset.smatS).find(x => x.id === b.dataset.smatView);
+        if (e) view(e);
+      }));
+      modal.querySelectorAll('[data-smat-dl]').forEach(b => b.addEventListener('click', () => {
+        const e = subjectIdx(b.dataset.smatS).find(x => x.id === b.dataset.smatDl);
+        if (e) download(e);
+      }));
+      modal.querySelectorAll('[data-smat-rm]').forEach(b => b.addEventListener('click', async () => {
+        await removeSubject(b.dataset.smatS, b.dataset.smatRm);
+        const box = modal.querySelector('#smatList');
+        if (box) { box.innerHTML = subjectFileListHtml(b.dataset.smatS); bindList(); }
+      }));
+    };
+    bindList();
+
+    const inp = modal.querySelector('#smatUp');
+    if (inp) inp.addEventListener('change', async () => {
+      const files = Array.from(inp.files || []);
+      inp.value = '';
+      if (!files.length) return;
+      for (const f of files) {
+        toast('正在上传：' + f.name);
+        try { await uploadSubject(subject, f); }
+        catch (e) { alert(f.name + '\n' + e.message); }
+      }
+      const box = modal.querySelector('#smatList');
+      if (box) { box.innerHTML = subjectFileListHtml(subject); bindList(); }
+      toast('上传完成 ✅ 记得点右上角 💾 保存，同步到其他设备');
+    });
+  }
+
+  function openSubjectBrowser() {
+    const custom = Object.keys(st().subjectMaterials || {})
+      .filter(n => !SUBJECTS.some(s => s.name === n))
+      .sort();
+    const all = SUBJECTS.concat(custom.map(n => ({ name: n, emoji: '📚' })));
+
+    const grid = all.map(s => {
+      const n = subjectIdx(s.name).length;
+      return `<button data-smat-open="${esc(s.name)}" data-smat-emoji="${s.emoji}"
+        style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;background:#fff;border:1px solid #EEE;border-radius:12px;cursor:pointer">
+        <span style="font-size:24px">${s.emoji}</span>
+        <span style="font-size:12px;font-weight:700;color:#3A3A4E">${esc(s.name)}</span>
+        <span style="font-size:10px;color:${n ? '#C75A92' : '#9A9AAB'};font-weight:700">${n ? n + ' 个文件' : '空'}</span>
+      </button>`;
+    }).join('');
+
+    window.openModal(`
+      <div style="padding:14px 16px;border-bottom:1px solid #eee;background:linear-gradient(135deg,#FFD6A5,#B5EAD7)">
+        <div style="font-size:16px;font-weight:800;color:#6B4A2A">📚 科目资料库</div>
+        <div style="font-size:12px;color:#7A6A4A;margin-top:3px">按科目归档的长期资料，点击科目进入上传 / 查阅 / 下载 / 删除</div>
+      </div>
+      <div style="padding:14px 16px;max-height:56vh;overflow-y:auto">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px">${grid}</div>
+        <button id="smatAddSubject" style="margin-top:12px;width:100%;padding:9px;border-radius:999px;background:rgba(0,0,0,.05);color:#5A5A6E;font-size:13px;font-weight:700;cursor:pointer;border:1px dashed #CCC">＋ 新增自定义科目</button>
+      </div>
+      <div class="act-foot"><button class="btn-sm btn-gray" data-back>关闭</button></div>
+    `);
+
+    const modal = document.querySelector('#modalLayer');
+    modal.querySelector('[data-back]').addEventListener('click', () => window.closeModal());
+    modal.querySelectorAll('[data-smat-open]').forEach(b => b.addEventListener('click', () => {
+      openSubjectPanel(b.dataset.smatOpen, b.dataset.smatEmoji || '📚');
+    }));
+    const addBtn = modal.querySelector('#smatAddSubject');
+    if (addBtn) addBtn.addEventListener('click', () => {
+      const name = prompt('输入新科目名称（如：编程、围棋、钢琴）：');
+      if (!name || !name.trim()) return;
+      const t = name.trim().slice(0, 12);
+      if (st().subjectMaterials && st().subjectMaterials[t] !== undefined) {
+        toast('科目已存在'); return;
+      }
+      setSubjectIdx(t, []);
+      window.SyncAPI.saveData(st());
+      if (window.appMarkDirty) window.appMarkDirty();
+      openSubjectBrowser();
+      openSubjectPanel(t, '📚');
+    });
+  }
+
   // ============ 暴露 ============
   window.Materials = {
     count: (dateKey, period) => idx(dateKey, period).length,
+    subjectCount: s => subjectIdx(s).length,
     openPanel,
     openBrowser,
+    openSubjectBrowser,
+    openSubjectPanel,
   };
 })();
