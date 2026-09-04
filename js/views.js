@@ -907,19 +907,6 @@
         </div>
       </div>
 
-      <div class="card" style="border:2px solid var(--pink);background:#FFF7FB">
-        <div class="card-title">🌍 公网直连 <span class="t-sub">（手机 5G 直接打开 · 零成本）</span></div>
-        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-          <div class="qr-box" id="publicQrBox" style="width:120px;height:120px;flex-shrink:0"></div>
-          <div style="flex:1;min-width:190px">
-            <div style="font-size:12px;color:var(--text-light);margin-bottom:4px">手机浏览器打开这个地址</div>
-            <div id="publicUrlText" style="font-size:13px;font-weight:700;color:var(--pink-deep);word-break:break-all">获取中…</div>
-            <button class="btn-sm btn-pink" id="copyPublic6Btn" style="margin-top:8px">复制公网地址</button>
-            <div id="publicTip" class="tip-text" style="margin-top:8px"></div>
-          </div>
-        </div>
-      </div>
-
       <div class="card">
         <div class="card-title">☁️ 数据同步 <span class="t-sub">（多设备共用一份数据）</span></div>
         <div class="cloud-status" id="cloudStatus">
@@ -934,18 +921,8 @@
       </div>
 
       <div class="card">
-        <div class="card-title">⚙️ 云端配置</div>
-        <div class="input-row" style="margin-bottom:10px">
-          <select id="cloudProvider" style="flex:1;padding:10px 12px;border-radius:10px;background:white;font-size:14px;border:2px solid #EEE">
-            <option value="">— 选择云服务 —</option>
-            <option value="local-server">本机服务端（server.js · 零配置 · 推荐）</option>
-            <option value="gitee">Gitee 仓库（国内速度快 · 免费）</option>
-            <option value="github">GitHub 仓库（免费）</option>
-            <option value="supabase">Supabase（免费 · 实时）</option>
-            <option value="cloudbase">腾讯云开发（国内速度快）</option>
-            <option value="rest">自定义 REST API</option>
-          </select>
-        </div>
+        <div class="card-title">⚙️ 云端配置 <span class="t-sub">（GitHub 仓库）</span></div>
+        <input type="hidden" id="cloudProvider" value="github">
         <div id="cloudFields"></div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           <button class="btn-sm btn-green" id="saveCloudBtn">💾 保存并连接</button>
@@ -954,47 +931,6 @@
         </div>
         <div id="cloudTestResult" style="margin-top:10px"></div>
         <div id="cloudGuide" style="margin-top:12px"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">🌐 三种访问方式 <span class="t-sub">（零成本 · 按场景选）</span></div>
-        <div class="tip-card" style="border:2px solid var(--pink);background:#FFF7FB"><span class="tip-emoji">📶</span><div>
-          <div class="tip-title">方式一 · 电脑热点（最推荐，100% 能打开）</div>
-          <div class="tip-text">手机 WiFi 连接电脑开的热点，流量走电脑网络，<b>不受运营商拦截</b>：</div>
-          <div style="background:white;border-radius:10px;padding:8px 12px;margin-top:6px;font-size:13px;line-height:1.9">
-            ① 手机 WiFi 找到 <b>YiBan-Desk</b>，密码 <b>yiban6666</b><br/>
-            ② 浏览器打开 <b style="color:var(--pink-deep)">http://192.168.137.1:8080</b>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
-            <div class="qr-box" id="hotspotQrBox" style="width:86px;height:86px;flex-shrink:0"></div>
-            <div style="font-size:12px;color:var(--text-light);line-height:1.7">← 扫码直达（手机先连 YiBan-Desk 再扫）<br/>
-            <button class="btn-sm btn-pink" id="copyHotspotUrlBtn" style="margin-top:4px">复制热点地址</button></div>
-          </div>
-          <div class="tip-text" style="margin-top:6px">💡 电脑开热点方法：设置 → 网络和 Internet → 移动热点 → 开。开热点不影响电脑正常上网。</div>
-        </div></div>
-        <div class="tip-card"><span class="tip-emoji">🏠</span><div>
-          <div class="tip-title">方式二 · 家里 WiFi 同网络</div>
-          <div class="tip-text">手机和电脑连<b>同一个 WiFi</b>，扫下方「我的房间」二维码或访问自动探测的局域网地址。</div>
-        </div></div>
-        <div class="tip-card"><span class="tip-emoji">🚌</span><div>
-          <div class="tip-title">方式三 · Vercel 公网版（静态备胎）</div>
-          <div style="background:white;border-radius:10px;padding:8px 10px;margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:13px;font-weight:700;color:var(--text-light);word-break:break-all;flex:1;text-decoration:line-through">https://20260902101109.vercel.app</span>
-            <button class="btn-sm btn-gray" id="copyPublicUrlBtn">复制</button>
-          </div>
-          <div class="tip-text" style="margin-top:6px">⚠️ <b>已停用</b>：实测该域名被 <b>DNS 投毒</b>，会解析到假 IP（<code>104.244.43.128</code> / 脸书地址段），
-          电脑和手机都打不开。换 DNS 无效，因为 UDP 明文查询同样被劫持。<br/>
-          ✅ 现在改走顶部「<b>公网直连</b>」的原生 IPv6 通道，不经过任何境外节点。</div>
-        </div></div>
-        <div class="tip-card" style="border:2px dashed var(--pink)"><span class="tip-emoji">📲</span><div>
-          <div class="tip-title">让手机 5G 也能用：装成本地 App（PWA 离线模式）</div>
-          <div class="tip-text">用热点或 WiFi 打开公网版<b>一次</b>，把工作台添加到手机主屏幕，之后<b>不联网也能秒开</b>（打卡/学习/数据全在手机本地）：</div>
-          <div style="background:white;border-radius:10px;padding:8px 12px;margin-top:6px;font-size:13px;line-height:1.9">
-            🤖 <b>Android</b>：浏览器打开公网版 → 菜单「⋮」→「添加到主屏幕 / 安装应用」<br/>
-            🍎 <b>iPhone</b>：Safari 打开公网版 → 分享「<b>↑</b>」→「添加到主屏幕」
-          </div>
-          <div class="tip-text" style="margin-top:6px">💡 添加后点桌面图标进入，全屏无浏览器边框，像真 App。版本更新时会自动在后台刷新。</div>
-        </div></div>
       </div>
 
       <div class="card">
@@ -1018,11 +954,6 @@
               <div id="mobileUrlText" style="font-size:13px;font-weight:700;color:var(--pink-deep);word-break:break-all">获取中…</div>
               <button class="btn-sm btn-gray" id="copyUrlBtn" style="margin-top:6px">复制地址</button>
             </div>
-
-            <div class="input-row">
-              <input type="text" id="manualIpInput" placeholder="手动填写电脑 IP，如 192.168.1.5" />
-              <button class="btn-sm btn-yellow" id="setIpBtn">设置</button>
-            </div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
             <div class="qr-box" id="qrBox"></div>
@@ -1032,44 +963,22 @@
       </div>
 
       <div class="card">
-        <div class="card-title">🔧 手机打不开？按顺序排查</div>
-        <div class="tip-card"><span class="tip-emoji">1️⃣</span><div>
-          <div class="tip-title">确认同一 WiFi</div>
-          <div class="tip-text">手机和电脑必须连同一个网络（手机不要用 4G/5G 流量）。</div>
-        </div></div>
-        <div class="tip-card"><span class="tip-emoji">2️⃣</span><div>
-          <div class="tip-title">确认地址不是 localhost</div>
-          <div class="tip-text">二维码地址必须是 <b>192.168.x.x</b>、<b>172.16.x.x</b> 或 <b>10.x.x.x</b> 这类局域网 IP。若显示 localhost，请在上方手动填写电脑 IP。</div>
-        </div></div>
-        <div class="tip-card"><span class="tip-emoji">3️⃣</span><div>
-          <div class="tip-title">关闭/放行防火墙</div>
-          <div class="tip-text">Windows 防火墙可能拦截 8080 端口。可在「Windows Defender 防火墙 → 允许应用」中放行，或临时关闭防火墙测试。</div>
-        </div></div>
-        <div class="tip-card"><span class="tip-emoji">4️⃣</span><div>
-          <div class="tip-title">查看电脑 IP</div>
-          <div class="tip-text">在电脑命令行运行 <b>ipconfig</b>，找「无线局域网适配器 WLAN」下的 <b>IPv4 地址</b>。</div>
-        </div></div>
-        <div class="tip-card"><span class="tip-emoji">5️⃣</span><div>
-          <div class="tip-title">公网地址（vercel.app）手机打不开？</div>
-          <div class="tip-text">部分运营商 5G/4G 会拦截境外站点。解决办法（任选其一）：
-            ① 手机连 WiFi 再试；② 手机 DNS 改为 <b>223.5.5.5</b>（阿里）或 <b>119.29.29.29</b>（DNSPod）——
-            设置 → WLAN → 长按当前网络 → 修改网络 → 高级 → IP设置选「静态」→ DNS 填入；③ 优先用局域网通道（第 1 种方式）。</div>
-        </div></div>
-      </div>
-
-      <div class="card">
         <div class="card-title">💡 同步说明</div>
-        <div class="tip-card"><span class="tip-emoji">🖥️</span><div>
-          <div class="tip-title">同浏览器多标签页</div>
-          <div class="tip-text">自动实时同步，任一标签页打卡，其他页面立刻更新。</div>
+        <div class="tip-card"><span class="tip-emoji">💾</span><div>
+          <div class="tip-title">保存后才推送</div>
+          <div class="tip-text">本地编辑不会自动上传，点右上角 <b>💾 保存</b>（或 <kbd>Ctrl+S</kbd>）后才推送到云端。</div>
+        </div></div>
+        <div class="tip-card"><span class="tip-emoji">📥</span><div>
+          <div class="tip-title">其他设备有更新 → 询问后同步</div>
+          <div class="tip-text">检测到云端新数据时右上角弹横幅，由你选择「同步覆盖」或「保留本地」，不会被静默覆盖。</div>
         </div></div>
         <div class="tip-card"><span class="tip-emoji">📱</span><div>
           <div class="tip-title">跨设备</div>
-          <div class="tip-text">输入相同房间号即可加入同一工作空间。扫码打开会自动带入房间号。</div>
+          <div class="tip-text">各设备打开同一网址、输入<b>相同房间号</b>即在同一工作空间；扫码打开会自动带入房间号。资料文件（📎/📚）随保存一起同步。</div>
         </div></div>
         <div class="tip-card"><span class="tip-emoji">🔒</span><div>
           <div class="tip-title">数据隐私</div>
-          <div class="tip-text">数据保存在各自设备的浏览器中，不上传服务器。当前为局域网方案，手机与电脑需在同一 WiFi；如需随时随地的云端同步，可升级接入云服务。</div>
+          <div class="tip-text">数据经你自己的 GitHub <b>私有仓库</b> 同步，不经过任何第三方服务器；Token 只保存在本机浏览器，不会随网页分发。</div>
         </div></div>
       </div>
     `;
