@@ -303,15 +303,18 @@
     }));
   }
 
-  // ============ UI：资料库浏览器（全部日期）============
-  function openBrowser() {
+  // ============ UI：资料库浏览器（按日期 + 按科目）============
+  function openBrowser(tab) {
+    tab = (tab === 'subject') ? 'subject' : 'date';
+
+    // --- 标签 1：按日期的课前/课后资料 ---
     const m = st().materials || {};
     const dates = Object.keys(m).sort().reverse();
-    let body;
+    let dateBody;
     if (!dates.length) {
-      body = '<div class="empty"><span class="empty-emoji">🗄</span>还没有任何资料。<br/>在今日课表里点某节课的 📎 按钮即可上传。</div>';
+      dateBody = '<div class="empty"><span class="empty-emoji">🗄</span>还没有任何资料。<br/>在今日课表里点某节课的 📎 按钮即可上传。</div>';
     } else {
-      body = dates.map(dk => {
+      dateBody = dates.map(dk => {
         const dayLessons = Object.keys(m[dk]).map(period => {
           const list = m[dk][period];
           const files = list.map(e => `
@@ -330,17 +333,55 @@
         </div>`;
       }).join('');
     }
+    const dateTotal = dates.reduce((n, dk) =>
+      n + Object.keys(m[dk]).reduce((x, p) => x + m[dk][p].length, 0), 0);
+
+    // --- 标签 2：按科目归档的长期资料 ---
+    const custom = Object.keys(st().subjectMaterials || {})
+      .filter(n => !SUBJECTS.some(s => s.name === n)).sort();
+    const subsWithFiles = SUBJECTS.concat(custom.map(n => ({ name: n, emoji: '📚' })))
+      .map(s => ({ name: s.name, emoji: s.emoji, list: subjectIdx(s.name).slice().sort((a, b) => b.uploadedAt - a.uploadedAt) }))
+      .filter(s => s.list.length);
+    let subjectBody;
+    if (!subsWithFiles.length) {
+      subjectBody = '<div class="empty"><span class="empty-emoji">📚</span>还没有科目资料。<br/>点「📚 科目资料」按钮选择科目后即可上传。</div>';
+    } else {
+      subjectBody = subsWithFiles.map(s => `
+        <div style="background:#fff;border:1px solid #EEE;border-radius:12px;padding:10px 14px;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:800;color:#8B4A2A">${s.emoji} ${esc(s.name)} <span style="color:#9A9AAB;font-weight:400;font-size:12px">（${s.list.length} 个文件）</span></div>
+          <div style="margin-top:4px">${subjectFileListHtml(s.name)}</div>
+          <label style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:5px 12px;border-radius:999px;background:var(--pink);color:#8B2A5B;font-size:12px;font-weight:700;cursor:pointer">
+            ＋ 上传到本科目<input type="file" multiple hidden data-smat-up="${esc(s.name)}">
+          </label>
+        </div>`).join('');
+    }
+    const subjectTotal = subsWithFiles.reduce((n, s) => n + s.list.length, 0);
+
+    const tabBtn = (key, label, count) => `
+      <button data-mtab="${key}" style="flex:1;padding:8px 10px;border-radius:999px;border:1px solid ${tab === key ? 'transparent' : '#DDD'};font-size:13px;font-weight:700;cursor:pointer;
+        background:${tab === key ? 'linear-gradient(135deg,#C9B6FF,#FFB6D9)' : '#F5F5F7'};color:${tab === key ? '#4A3A7A' : '#7A7A8C'}">
+        ${label}（${count}）
+      </button>`;
 
     window.openModal(`
       <div style="padding:14px 16px;border-bottom:1px solid #eee;background:linear-gradient(135deg,#C9B6FF,#FFB6D9)">
         <div style="font-size:16px;font-weight:800;color:#4A3A7A">🗄 资料库</div>
-        <div style="font-size:12px;color:#6B5A9A;margin-top:3px">全部日期的课前/课后资料，可查阅与下载</div>
+        <div style="font-size:12px;color:#6B5A9A;margin-top:3px">课前/课后资料 + 科目资料，可查阅、下载、删除</div>
       </div>
-      <div style="padding:14px 16px;max-height:60vh;overflow-y:auto">${body}</div>
+      <div style="display:flex;gap:8px;padding:12px 14px 0">
+        ${tabBtn('date', '📅 按日期', dateTotal)}
+        ${tabBtn('subject', '📚 按科目', subjectTotal)}
+      </div>
+      <div style="padding:12px 14px;max-height:56vh;overflow-y:auto">${tab === 'date' ? dateBody : subjectBody}</div>
       <div class="act-foot"><button class="btn-sm btn-gray" data-back>关闭</button></div>
     `);
     const modal = document.querySelector('#modalLayer');
     modal.querySelector('[data-back]').addEventListener('click', () => window.closeModal());
+
+    // 标签切换
+    modal.querySelectorAll('[data-mtab]').forEach(b => b.addEventListener('click', () => openBrowser(b.dataset.mtab)));
+
+    // 按日期：查看 / 下载
     modal.querySelectorAll('[data-mat-view]').forEach(b => b.addEventListener('click', () => {
       const e = (st().materials[b.dataset.matD] || {})[b.dataset.matP]?.find(x => x.id === b.dataset.matView);
       if (e) view(e);
@@ -348,6 +389,33 @@
     modal.querySelectorAll('[data-mat-dl]').forEach(b => b.addEventListener('click', () => {
       const e = (st().materials[b.dataset.matD] || {})[b.dataset.matP]?.find(x => x.id === b.dataset.matDl);
       if (e) download(e);
+    }));
+
+    // 按科目：查看 / 下载 / 删除 / 上传
+    modal.querySelectorAll('[data-smat-view]').forEach(b => b.addEventListener('click', () => {
+      const e = subjectIdx(b.dataset.smatS).find(x => x.id === b.dataset.smatView);
+      if (e) view(e);
+    }));
+    modal.querySelectorAll('[data-smat-dl]').forEach(b => b.addEventListener('click', () => {
+      const e = subjectIdx(b.dataset.smatS).find(x => x.id === b.dataset.smatDl);
+      if (e) download(e);
+    }));
+    modal.querySelectorAll('[data-smat-rm]').forEach(b => b.addEventListener('click', async () => {
+      await removeSubject(b.dataset.smatS, b.dataset.smatRm);
+      openBrowser('subject');
+    }));
+    modal.querySelectorAll('[data-smat-up]').forEach(inp => inp.addEventListener('change', async () => {
+      const subject = inp.dataset.smatUp;
+      const files = Array.from(inp.files || []);
+      inp.value = '';
+      if (!files.length) return;
+      for (const f of files) {
+        toast('正在上传：' + f.name);
+        try { await uploadSubject(subject, f); }
+        catch (e) { alert(f.name + '\n' + e.message); }
+      }
+      openBrowser('subject');
+      toast('上传完成 ✅ 记得点右上角 💾 保存，同步到其他设备');
     }));
   }
 
