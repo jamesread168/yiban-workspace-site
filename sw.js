@@ -3,23 +3,23 @@
  * 策略：stale-while-revalidate —— 优先秒开缓存，后台静默更新
  * 效果：手机加载过一次后，即使 5G 流量下被拦/无网络，也能正常打开工作台
  */
-const CACHE_NAME = 'yiban-workspace-v15';
+const CACHE_NAME = 'yiban-workspace-v16';
 const CORE_FILES = [
   './',
-  './index.html?v=14',
-  './manifest.json?v=14',
-  './css/style.css?v=14',
-  './js/data.js?v=14',
-  './js/sync.js?v=14',
-  './js/schedule.js?v=14',
-  './js/schedule-edit.js?v=14',
-  './js/study.js?v=14',
-  './js/views.js?v=14',
-  './js/cloud-sync.js?v=14',
-  './js/materials.js?v=14',
-  './js/app.js?v=14',
-  './assets/icons/icon-192.png?v=14',
-  './assets/icons/icon-512.png?v=14',
+  './index.html?v=15',
+  './manifest.json?v=15',
+  './css/style.css?v=15',
+  './js/data.js?v=15',
+  './js/sync.js?v=15',
+  './js/schedule.js?v=15',
+  './js/schedule-edit.js?v=15',
+  './js/study.js?v=15',
+  './js/views.js?v=15',
+  './js/cloud-sync.js?v=15',
+  './js/materials.js?v=15',
+  './js/app.js?v=15',
+  './assets/icons/icon-192.png?v=15',
+  './assets/icons/icon-512.png?v=15',
 ];
 
 // 安装：预缓存核心文件
