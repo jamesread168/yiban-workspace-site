@@ -29,6 +29,8 @@
   let autoGetData = null;
   let autoApplyData = null;
   let syncing = false;
+  // 自动推送开关：false 时 sync() 只拉不推，避免脏编辑被自动同步覆盖
+  let autoPushEnabled = true;
 
   // github / gitee 更新文件时需要 sha
   const shaCache = {};
@@ -341,7 +343,9 @@
 
   // ---------- 智能同步 ----------
   // 返回 { data, changed, reason }
-  async function sync(roomId, localData) {
+  // opts.forcePush = true 时绕过 autoPushEnabled（点保存按钮时强制推一次）
+  async function sync(roomId, localData, opts) {
+    opts = opts || {};
     if (syncing) return { data: localData, changed: false, reason: 'busy' };
     if (status !== 'online') {
       const ok = await connect();
@@ -353,9 +357,13 @@
       const localAt = Number(localData && localData.updatedAt) || 0;
 
       if (!remote || !remote.data) {
-        await push(roomId, localData, localAt || Date.now());
+        if (autoPushEnabled || opts.forcePush) {
+          await push(roomId, localData, localAt || Date.now());
+          lastSyncAt = Date.now();
+          return { data: localData, changed: false, reason: 'uploaded' };
+        }
         lastSyncAt = Date.now();
-        return { data: localData, changed: false, reason: 'uploaded' };
+        return { data: localData, changed: false, reason: 'pending-push' };
       }
 
       const remoteAt = Number(remote.updatedAt) || 0;
@@ -364,17 +372,34 @@
         return { data: remote.data, changed: true, reason: 'pulled' };
       }
       if (localAt > remoteAt) {
-        const res = await push(roomId, localData, localAt);
-        lastSyncAt = Date.now();
-        if (res && res.conflict && res.remote && res.remote.data) {
-          return { data: res.remote.data, changed: true, reason: 'conflict-resolved' };
+        if (autoPushEnabled || opts.forcePush) {
+          const res = await push(roomId, localData, localAt);
+          lastSyncAt = Date.now();
+          if (res && res.conflict && res.remote && res.remote.data) {
+            return { data: res.remote.data, changed: true, reason: 'conflict-resolved' };
+          }
+          return { data: localData, changed: false, reason: 'pushed' };
         }
-        return { data: localData, changed: false, reason: 'pushed' };
+        lastSyncAt = Date.now();
+        return { data: localData, changed: false, reason: 'pending-push' };
       }
       lastSyncAt = Date.now();
       return { data: localData, changed: false, reason: 'in-sync' };
     } finally {
       syncing = false;
+    }
+  }
+
+  // ---------- 仅拉取：用于禁用自动推送后的纯监听模式 ----------
+  async function pullOnly(roomId) {
+    if (status !== 'online') {
+      const ok = await connect();
+      if (!ok) return null;
+    }
+    try {
+      return await pull(roomId);
+    } catch (e) {
+      return null;
     }
   }
 
@@ -475,10 +500,12 @@
 
   // ---------- 暴露 ----------
   window.CloudSync = {
-    loadConfig, saveConfig, connect, pull, push, sync,
+    loadConfig, saveConfig, connect, pull, push, sync, pullOnly,
     startAutoSync, stopAutoSync, onStatus,
     startSSE, stopSSE, onRemoteChange,
     autoDetectServer, getServerInfo,
+    setAutoPushEnabled: (b) => { autoPushEnabled = !!b; },
+    isAutoPushEnabled: () => autoPushEnabled,
     getStatus: () => status,
     getStatusMsg: () => statusMsg,
     getLastSync: () => lastSyncAt,
