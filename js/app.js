@@ -1177,6 +1177,7 @@ function init() {
   window.appRender = render;
   window.appAwardStars = awardStars;
   window.appMarkDirty = markDirty;
+  window.appSaveAll = saveAll;   // 资料上传/删除后立即保存+推送（materials.js 用）
 
   // 顶栏保存按钮
   const saveBtn = $('#saveBtn');
