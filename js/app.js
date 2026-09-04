@@ -644,20 +644,21 @@ function setManualIP(ip) {
 
 // 返回手机可访问的基础地址
 // 关键：localhost / 127.0.0.1 手机访问不到，必须换成局域网 IP
+// 注意：GitHub Pages 等带路径的站点（/yiban-workspace-site/）必须保留路径
 async function getMobileBaseUrl() {
   const port = window.location.port || '8080';
   const proto = window.location.protocol;
-
-  // 1. 用户手动指定的 IP 优先级最高
-  const saved = localStorage.getItem('yiban-manual-ip');
-  if (saved) return `http://${saved}:${port}`;
-
   const host = window.location.hostname;
 
-  // 2. 已用 IP / 域名访问 → 手机端同样可访问，直接沿用当前地址
+  // 1. 已用 IP / 域名访问（含 GitHub Pages）→ 手机同样可访问，沿用当前地址（保留目录路径）
   if (host !== 'localhost' && host !== '127.0.0.1') {
-    return `${proto}//${window.location.host}`;
+    const dir = window.location.pathname.replace(/[^/]*$/, ''); // 去掉文件名，保留目录
+    return `${proto}//${window.location.host}${dir}`;
   }
+
+  // 2. 本地访问时，手动指定的 IP 优先
+  const saved = localStorage.getItem('yiban-manual-ip');
+  if (saved) return `http://${saved}:${port}`;
 
   // 3. 本地访问 → 问服务器要真实地址：
   //    优先「公网 IPv6」（手机 5G 也能直接连），其次局域网 IPv4（只能同 WiFi）
