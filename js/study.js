@@ -738,35 +738,54 @@
 
   // ===== 引擎 2：在线 TTS 兜底 =====
   // 微信 X5 内核 / 部分国产浏览器没有 window.speechSynthesis，
-  // 此时改用有道公开发音接口（国内可访问，支持中英文）。
+  // 此时改用在线发音接口（国内可访问，支持中英文）。
+  // 2026-09 实测：有道中文接口已废（超过 1 个字即返回 500 "returned null audio"），
+  // 改为「百度翻译网页版优先 + 有道兜底」双通道，失败自动换引擎重试。
+  // 注意：百度接口校验 Referer（非百度来源返回 HTML 防盗链页），
+  // index.html 已设置 <meta name="referrer" content="no-referrer"> 配合使用。
   let ttsAudio = null;
   // onEnd：本段播完（或失败）后的回调，用于串联分段朗读
+  function onlineTTSUrls(text, lang) {
+    let t = String(text).replace(/[\n\r]+/g, '，').trim();
+    if (t.length > 40) t = t.slice(0, 40);
+    if (!t) return [];
+    const isEn = (lang === 'en-US');
+    const urls = [];
+    // 引擎 A：百度翻译网页版 gettts（中英文均可用，实测 30 字长句正常）
+    urls.push('https://fanyi.baidu.com/gettts?lan=' + (isEn ? 'en' : 'zh') +
+      '&text=' + encodeURIComponent(t) + '&spd=3&source=web');
+    // 引擎 B：有道 dictvoice（英文可靠；中文接口已不稳定，仅作兜底）
+    urls.push('https://dict.youdao.com/dictvoice?audio=' +
+      encodeURIComponent(t) + '&type=' + (isEn ? 1 : 0));
+    return urls;
+  }
+
   function playOnlineTTS(text, lang, onEnd) {
     try {
-      // 有道对过长文本返回 500 "returned null audio"，这里限制每段 40 字
-      let t = String(text).replace(/[\n\r]+/g, '，').trim();
-      if (t.length > 40) t = t.slice(0, 40);
-      if (!t) { if (onEnd) onEnd(); return true; }
-
-      // type: 1=英文 0=中文（注意：有道英文接口当前返回空音频，仅中文可靠）
-      const type = (lang === 'en-US') ? 1 : 0;
-      const url = 'https://dict.youdao.com/dictvoice?audio=' +
-        encodeURIComponent(t) + '&type=' + type;
+      const urls = onlineTTSUrls(text, lang);
+      if (!urls.length) { if (onEnd) onEnd(); return true; }
       if (!ttsAudio) ttsAudio = new Audio();
 
       const finish = () => { if (onEnd) onEnd(); };
-      // 播完继续下一句；出错也继续，避免整段卡死
+      let i = 0;
+      const tryPlay = () => {
+        ttsAudio.pause();
+        ttsAudio.src = urls[i];
+        const p = ttsAudio.play();
+        // play() 的 promise reject 会误报，这里静默
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      };
+      // 播完继续下一句；当前引擎失败自动换下一个引擎重试
       ttsAudio.onended = finish;
       ttsAudio.onerror = () => {
-        toast('在线发音失败：请检查网络');
-        finish();
+        i++;
+        if (i < urls.length) { tryPlay(); }
+        else {
+          toast('在线发音失败：请检查网络');
+          finish();
+        }
       };
-
-      ttsAudio.pause();
-      ttsAudio.src = url;
-      const p = ttsAudio.play();
-      // play() 的 promise reject 会误报，这里静默
-      if (p && typeof p.catch === 'function') p.catch(() => {});
+      tryPlay();
       return true;
     } catch (e) {
       if (onEnd) onEnd();
