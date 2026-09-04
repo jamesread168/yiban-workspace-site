@@ -4,7 +4,7 @@
  */
 
 // ============ 状态 ============
-const state = { data: null, view: 'dashboard', dayTab: 1 };
+const state = { data: null, view: 'dashboard', dayTab: 1, dirty: false, saving: false, lastSavedAt: 0, pendingCloud: false };
 const AVATARS = ['🐰','🐱','🐶','🐼','🦊','🐯','🐸','🐵','🦁','🐨','🐧','🐢'];
 
 // ============ 工具 ============
@@ -23,6 +23,87 @@ function showToast(msg) {
   el.classList.add('show');
   clearTimeout(showToast._t);
   showToast._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ============ 脏标记 & 保存按钮 ============
+// 编辑后调用：标记本机有未同步修改
+function markDirty() {
+  state.dirty = true;
+  state.pendingCloud = state.pendingCloud || hasCloudConfigured();
+  updateSaveBtn();
+}
+function hasCloudConfigured() {
+  const cfg = window.CloudSync && window.CloudSync.getConfig();
+  return !!(cfg && cfg.provider);
+}
+function updateSaveBtn() {
+  const btn = $('#saveBtn');
+  if (!btn) return;
+  const text = btn.querySelector('.save-text');
+  const dot = btn.querySelector('.save-dot');
+  btn.classList.remove('dirty', 'saving', 'error');
+  if (state.saving) {
+    btn.classList.add('saving');
+    text.textContent = '保存中…';
+    if (dot) dot.hidden = true;
+    btn.title = '正在保存并同步…';
+  } else if (state.dirty) {
+    btn.classList.add('dirty');
+    text.textContent = state.pendingCloud ? '保存 ●' : '保存 ●';
+    if (dot) dot.hidden = false;
+    btn.title = '有未保存的修改，点击保存' + (state.pendingCloud ? '并同步到云端' : '到本机');
+  } else {
+    text.textContent = '已保存';
+    if (dot) dot.hidden = true;
+    btn.title = state.lastSavedAt ? '最近保存：' + new Date(state.lastSavedAt).toLocaleTimeString('zh-CN') : '已是最新';
+  }
+}
+
+// 统一的"保存"动作：先写本机，再按需推云端
+async function saveAll() {
+  if (state.saving) return;
+  state.saving = true;
+  updateSaveBtn();
+  const ts = Date.now();
+  try {
+    state.data.updatedAt = ts;
+    // 写本机（localStorage + 跨标签广播），这一步始终成功
+    window.SyncAPI.saveData(state.data);
+    state.lastSavedAt = ts;
+    state.dirty = false;        // 本机已写入，dirty 清零
+    state.pendingCloud = false; // 默认无待推送，下面再视云端情况翻回 true
+    updateSaveBtn();
+
+    const cloudConfigured = hasCloudConfigured();
+    const cloudOnline = cloudConfigured && window.CloudSync.getStatus() === 'online';
+
+    if (cloudOnline) {
+      // 用 forcePush 强制推一次，绕过 autoPushEnabled 关闭状态
+      const res = await window.CloudSync.sync(state.data.roomId, state.data, { forcePush: true });
+      if (res && res.ok !== false && res.reason !== 'pending-push') {
+        const map = { uploaded: '☁️ 已保存并上传', pushed: '☁️ 已保存并同步', 'conflict-resolved': '⚠️ 同步时发现冲突，已采用云端版本' };
+        showToast(map[res.reason] || '☁️ 已同步');
+      } else {
+        // 推送失败，把按钮翻回"待同步"提示用户重试
+        state.pendingCloud = true;
+        showToast('本机已保存，云端推送失败 ⚠️');
+        updateSaveBtn();
+      }
+    } else if (cloudConfigured) {
+      state.pendingCloud = true;
+      showToast('已保存到本机，云端未连接 ⚠️');
+      updateSaveBtn();
+    } else {
+      showToast('已保存到本机 💾');
+    }
+  } catch (e) {
+    state.dirty = true;
+    showToast('保存失败：' + e.message);
+    updateSaveBtn();
+  } finally {
+    state.saving = false;
+    updateSaveBtn();
+  }
 }
 
 function confetti() {
@@ -156,7 +237,7 @@ function bindViewEvents() {
         row.classList.add('checked'); row.querySelector('.habit-check').textContent = '✓';
         awardStars(1);
       }
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       updateSidebar();
     });
   });
@@ -182,7 +263,7 @@ function bindViewEvents() {
       const t = state.data.todos.find(x => x.id === c.dataset.todoToggle);
       if (!t) return;
       t.done = !t.done;
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       if (t.done) { awardStars(1); confetti(); }
       render();
     });
@@ -190,7 +271,7 @@ function bindViewEvents() {
   content.querySelectorAll('[data-todo-del]').forEach(b => {
     b.addEventListener('click', () => {
       state.data.todos = state.data.todos.filter(x => x.id !== b.dataset.todoDel);
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       render();
     });
   });
@@ -200,7 +281,7 @@ function bindViewEvents() {
     const v = inp.value.trim();
     if (!v) return;
     state.data.todos.push({ id: 't' + Date.now(), text: v, done: false, date: window.todayKey() });
-    window.SyncAPI.saveData(state.data);
+    window.SyncAPI.saveData(state.data); markDirty();
     render();
   };
   if ($('#addTodoBtn')) $('#addTodoBtn').addEventListener('click', addTodo);
@@ -226,7 +307,7 @@ function bindViewEvents() {
       const k = window.todayKey();
       const first = !state.data.mood[k];
       state.data.mood[k] = { ...pickedMood, note };
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       if (first) awardStars(1); else showToast('心情已更新 😊');
       render();
     });
@@ -245,7 +326,7 @@ function bindViewEvents() {
         state.data.exercise[k][id] = { value: parseInt(v, 10) || sp.target, minutes: parseInt(v, 10) || sp.target };
         awardStars(2);
       }
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       render();
     });
   });
@@ -257,7 +338,7 @@ function bindViewEvents() {
       if (!state.data.health[k]) state.data.health[k] = {};
       state.data.health[k].sleepStart = a;
       state.data.health[k].sleepEnd = b;
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       showToast('睡眠已记录 😴');
       render();
     });
@@ -269,7 +350,7 @@ function bindViewEvents() {
       if (!state.data.health[k]) state.data.health[k] = {};
       if (h) state.data.health[k].height = parseFloat(h);
       if (w) state.data.health[k].weight = parseFloat(w);
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       showToast('身体数据已保存 📏');
       render();
     });
@@ -283,7 +364,7 @@ function bindViewEvents() {
       const pg = parseInt($('#readPages').value, 10) || 0;
       if (!book) { showToast('请填写书名～'); return; }
       state.data.reading.unshift({ date: window.todayKey(), book, minutes: min, pages: pg });
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       awardStars(2);
       render();
     });
@@ -291,7 +372,7 @@ function bindViewEvents() {
   content.querySelectorAll('[data-read-del]').forEach(b => {
     b.addEventListener('click', () => {
       state.data.reading.splice(parseInt(b.dataset.readDel, 10), 1);
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       render();
     });
   });
@@ -304,7 +385,7 @@ function bindViewEvents() {
       if ((state.data.stars?.total || 0) < r.cost) { showToast('星星还不够哦～'); return; }
       if (!confirm(`确定用 ${r.cost} ⭐ 兑换「${r.name}」吗？`)) return;
       state.data.stars.total -= r.cost;
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       showToast(`🎉 兑换成功：${r.name}`);
       confetti();
       render();
@@ -362,7 +443,7 @@ function bindViewEvents() {
       state.data.habits[k] = {};
       state.data.exercise[k] = {};
       state.data.study[k] = {};
-      window.SyncAPI.saveData(state.data);
+      window.SyncAPI.saveData(state.data); markDirty();
       render();
       showToast('今日已重置');
     });
@@ -501,7 +582,7 @@ function bindSync() {
     const code = $('#joinRoomInput').value.trim().toUpperCase();
     if (code.length < 4) { showToast('请输入正确的房间号'); return; }
     state.data.roomId = code;
-    window.SyncAPI.saveData(state.data);
+    window.SyncAPI.saveData(state.data); markDirty();
     const url = new URL(window.location.href);
     url.searchParams.set('room', code);
     window.history.replaceState({}, '', url.toString());
@@ -826,25 +907,122 @@ function updateCloudStatus() {
 function startCloudAuto() {
   if (!window.CloudSync) return;
   const isLocal = window.CloudSync.isLocalServer();
+
+  // 关键：禁用轮询自动推送。本地编辑后只有用户点保存才推云端，
+  // 否则会一边编辑一边偷偷被同步，新数据可能把刚改的覆盖掉。
+  window.CloudSync.setAutoPushEnabled(false);
+
   window.CloudSync.startAutoSync(
     state.data.roomId,
     () => state.data,
-    (remoteData) => {
+    // 检测到远端更新不再自动覆盖本机，改为弹出确认横幅
+    (remoteData, source) => {
       if (!remoteData) return;
-      state.data = remoteData;
-      window.SyncAPI.saveData(state.data);
-      render();
-      showToast('☁️ 已同步最新数据');
+      promptRemoteUpdate(remoteData, source || '轮询检测');
     },
     // 本机服务端延迟极低，4 秒轮询 + SSE 实时推送；云端为了省请求用 20 秒
     isLocal ? 4000 : 20000
   );
 
-  // 其它设备一改动，本设备立刻拉取（仅本机服务端支持）
+  // 其它设备一改动，本设备立刻检测（仅本机服务端支持）
   if (isLocal && !startCloudAuto._sseBound) {
     startCloudAuto._sseBound = true;
-    window.CloudSync.onRemoteChange(() => window.CloudSync.runOnce());
+    window.CloudSync.onRemoteChange((msg) => {
+      // SSE 推送：对方刚保存过，本地拉一次对比
+      if (msg && msg.serverAt) {
+        // 直接用 serverAt 触发一次拉取并比对
+        window.CloudSync.runOnce();
+      }
+    });
   }
+}
+
+// ============ 云端有更新 → 横幅提示，让用户选择 ============
+let remotePromptShown = false;
+function promptRemoteUpdate(remoteData, source) {
+  // 兼容两种入参：pull() 返回 { data, updatedAt }，sync() 返回 { data, changed, reason }
+  let workspaceData = null, remoteAt = 0;
+  if (!remoteData) return;
+  if (remoteData.updatedAt !== undefined && typeof remoteData.data === 'object') {
+    workspaceData = remoteData.data;
+    remoteAt = Number(remoteData.updatedAt) || 0;
+  } else if (remoteData.data && typeof remoteData.data === 'object') {
+    workspaceData = remoteData.data;
+    remoteAt = Number(workspaceData.updatedAt) || 0;
+  }
+  if (!workspaceData) return;
+
+  const localAt = Number(state.data.updatedAt) || 0;
+  // 防抖：如果已经在提示了，不重复
+  if (remotePromptShown) return;
+  // 已被其它路径处理过（比如用户刚刚点过"同步"），跳过
+  if (remoteAt <= localAt) return;
+
+  // 差异预览
+  const diff = summarizeDiff(state.data, workspaceData);
+
+  remotePromptShown = true;
+  const banner = document.createElement('div');
+  banner.className = 'cloud-update-banner';
+  banner.innerHTML = `
+    <span class="cu-emoji">📥</span>
+    <div class="cu-text">
+      <div>检测到<b>其他设备的新版本</b></div>
+      <div class="cu-time">${source || ''} · ${formatTimeAgo(remoteAt)}${diff ? ' · ' + diff : ''}</div>
+    </div>
+    <div class="cu-actions">
+      <button class="primary" id="cuAccept">同步覆盖</button>
+      <button id="cuKeep">保留本地</button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+
+  const close = () => {
+    banner.remove();
+    remotePromptShown = false;
+  };
+  banner.querySelector('#cuAccept').addEventListener('click', () => {
+    // 应用云端版本，覆盖本地（已编辑的会丢失——这是用户明确选择的）
+    const fresh = JSON.parse(JSON.stringify(workspaceData));
+    fresh.roomId = state.data.roomId;
+    state.data = fresh;
+    window.SyncAPI.saveData(state.data);
+    render();
+    state.dirty = false;
+    state.pendingCloud = false;
+    updateSaveBtn();
+    showToast('已同步云端版本 ☁️');
+    close();
+  });
+  banner.querySelector('#cuKeep').addEventListener('click', () => {
+    // 保留本地。下次保存时本地会盖掉云端
+    close();
+    showToast('已保留本地，下次保存会上传到云端');
+  });
+  // 8 秒无操作自动关闭"保留本地"
+  setTimeout(() => { if (banner.isConnected) close(); }, 12000);
+}
+
+function formatTimeAgo(ts) {
+  if (!ts) return '';
+  const diff = Math.max(0, Date.now() - ts);
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+  return new Date(ts).toLocaleString('zh-CN');
+}
+
+function summarizeDiff(local, remote) {
+  // 简单的"差异摘要"：比对星星、连续天数、待办数、最近一次保存日
+  const parts = [];
+  const ls = local.stars?.total || 0, rs = remote.stars?.total || 0;
+  if (ls !== rs) parts.push(`⭐ ${rs - ls >= 0 ? '+' : ''}${rs - ls}`);
+  const lc = local.streaks?.currentDays || 0, rc = remote.streaks?.currentDays || 0;
+  if (lc !== rc) parts.push(`🔥 ${rc}天`);
+  const lt = (local.todos || []).filter(t => !t.done).length;
+  const rt = (remote.todos || []).filter(t => !t.done).length;
+  if (lt !== rt) parts.push(`📝 待办${rt}项`);
+  return parts.join(' · ');
 }
 
 function bindCloud() {
@@ -965,15 +1143,26 @@ function bindCloud() {
   const syncBtn = $('#syncNowBtn');
   if (syncBtn) {
     syncBtn.addEventListener('click', async () => {
+      // 立即同步 = 强制推送本地（如果本地有修改）。拉取必须先经确认。
+      const btn = syncBtn;
+      btn.disabled = true;
       showToast('正在同步…');
-      const res = await window.CloudSync.sync(state.data.roomId, state.data);
-      if (res.changed && res.data) {
-        state.data = res.data;
-        window.SyncAPI.saveData(state.data);
-        render();
-        showToast('☁️ 已拉取云端最新数据');
-      } else {
-        showToast('同步完成（' + (res.reason || '') + '）');
+      try {
+        const res = await window.CloudSync.sync(state.data.roomId, state.data, { forcePush: true });
+        if (res.changed && res.data) {
+          // 远端更新的情况：转给横幅确认
+          promptRemoteUpdate(res, '立即同步 · 远端检测');
+          showToast('云端有新数据，请选择是否同步');
+        } else if (res.reason === 'pushed' || res.reason === 'uploaded' || res.reason === 'conflict-resolved') {
+          state.dirty = false;
+          state.pendingCloud = false;
+          updateSaveBtn();
+          showToast('☁️ 已推送本地修改到云端');
+        } else {
+          showToast('同步完成（' + (res.reason || '') + '）');
+        }
+      } finally {
+        btn.disabled = false;
       }
       updateCloudStatus();
     });
@@ -1052,6 +1241,27 @@ function init() {
   window.appConfetti = confetti;
   window.appRender = render;
   window.appAwardStars = awardStars;
+
+  // 顶栏保存按钮
+  const saveBtn = $('#saveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', saveAll);
+  }
+  // Ctrl/Cmd + S 快捷保存
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      saveAll();
+    }
+  });
+  // 有未保存修改时，离开页面提醒
+  window.addEventListener('beforeunload', (e) => {
+    if (state.dirty) {
+      e.preventDefault();
+      e.returnValue = '有未保存的修改，确定要离开吗？';
+      return e.returnValue;
+    }
+  });
 
   // URL 房间号
   const url = new URL(window.location.href);
