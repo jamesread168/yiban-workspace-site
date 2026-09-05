@@ -556,6 +556,13 @@
 
     function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
 
+    function quit() {
+      stopTimer();
+      closed = true;
+      window.closeModal();
+      render();
+    }
+
     function over() {
       stopTimer();
       closed = true;
@@ -584,7 +591,7 @@
     function bind() {
       const m = modalEl();
       const qt = m.querySelector('[data-quit]');
-      if (qt) qt.addEventListener('click', () => { stopTimer(); window.closeModal(); render(); });
+      if (qt) qt.addEventListener('click', quit);
       m.querySelectorAll('[data-o]').forEach(b => b.addEventListener('click', () => {
         if (closed) return;
         const right = String(b.dataset.o) === String(cur.ans);
@@ -602,12 +609,12 @@
         setTimeout(() => {
           if (closed) return;
           if (left <= 0) { over(); return; }
-          window.openModal(build()); bind();
+          window.openModal(build(), { onClose: quit }); bind();
         }, right ? 260 : 750);
       }));
     }
 
-    window.openModal(build());
+    window.openModal(build(), { onClose: quit });
     bind();
     timer = setInterval(() => {
       left--;
