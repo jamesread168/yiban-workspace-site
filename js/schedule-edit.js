@@ -272,6 +272,7 @@
       const monday = w.monday;
       const { schedule, overridden } = window.getWeekScheduleByMonday(monday);
       const todayYmd = window.ymd(new Date());
+      const hm2min = t => { const [h, m] = t.split(':'); return parseInt(h, 10) * 60 + parseInt(m, 10); };
 
       // 与默认课表不同的课格集合：'day|period'
       const diffMap = new Set();
@@ -281,37 +282,60 @@
       const diffList = diffMap.size && window.getWeekOverrideDiff
         ? window.getWeekOverrideDiff(monday) : [];
 
-      // 表头：周几 + 日期
+      // 周一~周五中所有出现过的节次，按开始时间排序；
+      // 用 "period|start" 作唯一键，确保上午/下午同名节次（如眼保健操）各占一行。
+      const periodMap = new Map();
+      [1, 2, 3, 4, 5].forEach(d => {
+        (schedule[d] || []).forEach(x => {
+          const uid = x.period + '|' + x.start;
+          if (!periodMap.has(uid)) periodMap.set(uid, x);
+        });
+      });
+      const allPeriods = Array.from(periodMap.values()).sort((a, b) => {
+        const ta = hm2min(a.start), tb = hm2min(b.start);
+        if (ta !== tb) return ta - tb;
+        return String(a.period).localeCompare(String(b.period));
+      });
+
+      // 每天 period+start -> item 映射（支持同名节次不同时间点）
+      const dayMaps = [1, 2, 3, 4, 5].map(d => {
+        const m = new Map();
+        (schedule[d] || []).forEach(x => m.set(x.period + '|' + x.start, x));
+        return m;
+      });
+
+      // 表头：节次 + 周一~周五（每天一列）
       const headCells = [1, 2, 3, 4, 5].map(d => {
         const date = new Date(monday.getTime() + (d - 1) * 86400000);
         const isToday = window.ymd(date) === todayYmd;
-        return `<th style="padding:6px 2px;font-size:12px;${isToday ? 'background:#FFD6E8;color:#C75A92;font-weight:800' : ''}">
-          周${dayNames[d]}<br/><span style="font-size:10px;font-weight:400">${date.getMonth() + 1}.${date.getDate()}${isToday ? ' ·今天' : ''}</span>
+        return `<th class="sem-th ${isToday ? 'sem-today' : ''}">
+          周${dayNames[d]}<span class="sem-th-date">${date.getMonth() + 1}.${date.getDate()}${isToday ? '·今天' : ''}</span>
         </th>`;
       }).join('');
 
-      // 行 = 天，列 = 6 节正课（手机屏幕友好，课程用短名）
-      const bodyRows = [1, 2, 3, 4, 5].map(d => {
-        const items = schedule[d] || [];
-        const byPeriod = new Map(items.map(x => [x.period, x]));
-        const date = new Date(monday.getTime() + (d - 1) * 86400000);
-        const isToday = window.ymd(date) === todayYmd;
-        const cells = PERIOD_SLOTS.map(p => {
-          const x = byPeriod.get(p);
-          const changed = diffMap.has(d + '|' + p);
+      // 表格体：每一行是一个节次，每一天一列
+      const bodyRows = allPeriods.map(p => {
+        const isBreakRow = p.isBreak || p.isActivity;
+        const dayCells = [1, 2, 3, 4, 5].map(d => {
+          const date = new Date(monday.getTime() + (d - 1) * 86400000);
+          const isToday = window.ymd(date) === todayYmd;
+          const x = dayMaps[d - 1].get(p.period + '|' + p.start);
+          const changed = diffMap.has(d + '|' + p.period);
           if (!x) {
-            return `<td style="border:1px solid #F0F0F4;padding:7px 2px;text-align:center;font-size:12px;color:#C5C5D0">—</td>`;
+            return `<td class="sem-td sem-empty ${isToday ? 'sem-today' : ''}" title="无课程"><span class="sem-placeholder">课程名</span></td>`;
           }
-          const bg = changed ? 'background:#FFF3C2' : (isToday ? 'background:#FFF0F6' : 'background:#fff');
-          const star = changed ? ' <span style="color:#E08900" title="与默认课表不同">★</span>' : '';
-          return `<td style="border:1px solid #F0F0F4;padding:7px 2px;text-align:center;font-size:12px;${bg}"
-            title="${esc(x.name)}（${x.start}-${x.end}）">${esc(shortName(x))}${star}</td>`;
+          const cls = [isToday ? 'sem-today' : '', changed ? 'sem-changed' : '', (x.isBreak || x.isActivity) ? 'sem-break' : ''].filter(Boolean).join(' ');
+          return `<td class="sem-td ${cls}" title="${esc(x.name)}（${x.start}-${x.end}）">
+            <span class="sem-subject">${esc(shortName(x))}</span>
+            ${changed ? '<span class="sem-diff" title="与默认课表不同">★</span>' : ''}
+          </td>`;
         }).join('');
         return `<tr>
-          <td style="border:1px solid #F0F0F4;padding:6px;background:${isToday ? '#FFD6E8' : '#FAFAFA'};font-size:12px;font-weight:700;${isToday ? 'color:#C75A92' : 'color:#3A3A4E'}">
-            周${dayNames[d]}<br/><span style="font-size:10px;font-weight:400">${date.getMonth() + 1}.${date.getDate()}</span>
+          <td class="sem-period ${isBreakRow ? 'sem-break' : ''}">
+            <div class="sem-period-name">${esc(p.period)}</div>
+            <div class="sem-period-time">${p.start}-${p.end}</div>
           </td>
-          ${cells}
+          ${dayCells}
         </tr>`;
       }).join('');
 
@@ -334,17 +358,14 @@
           </div>
           <div style="font-size:13px;font-weight:700;margin-bottom:2px">第 ${no} 周 / 共 ${weeks.length} 周 <span style="font-weight:400;color:#7A7A8C">（${w.label}）</span></div>
           <div style="display:flex;gap:6px;margin-bottom:10px">${badge}${ovBadge}</div>
-          <div style="overflow-x:auto;border-radius:10px;border:1px solid #eee">
-            <table style="width:100%;border-collapse:collapse;min-width:430px">
-              <thead><tr style="background:#F8F8F8">
-                <th style="padding:6px;font-size:12px;width:52px"></th>${headCells}
-              </tr></thead>
+          <div class="sem-wrap">
+            <table class="sem-table">
+              <thead><tr><th class="sem-th sem-th-period">节次</th>${headCells}</tr></thead>
               <tbody>${bodyRows}</tbody>
             </table>
           </div>
           <div style="font-size:11px;color:#7A7A8C;margin-top:8px;line-height:1.7">
-            每天 8:00 🚩 升旗/阳光体育 · 10:25/14:50 👀 眼保健操 · 12:10 🍱 午餐午休<br/>
-            节次时间：${PERIOD_SLOTS.map(p => p.replace('第', '').replace('节', '') + '节 ' + PERIOD_TIMES[p]).join(' · ')}
+            每天 8:00 🚩 升旗/阳光体育 · 10:25/14:50 👀 眼保健操 · 12:10 🍱 午餐午休
             ${overridden ? '<br/><span style="color:#8B6000">★ 标记 = 与默认课表不同的课</span>' : ''}
           </div>
           ${diffList.length ? `<div style="margin-top:8px;font-size:12px;color:#8B4513;line-height:1.7;background:rgba(255,230,150,0.35);padding:6px 10px;border-radius:8px">
