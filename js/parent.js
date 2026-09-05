@@ -76,7 +76,7 @@
     `);
     const m = document.querySelector('#modalLayer');
     m.querySelector('[data-cancel]').addEventListener('click', () => window.closeModal());
-    m.querySelector('[data-ok]').addEventListener('click', () => tryLogin);
+    m.querySelector('[data-ok]').addEventListener('click', tryLogin);
     const inp = m.querySelector('#pinInput');
     inp.addEventListener('keypress', e => { if (e.key === 'Enter') tryLogin(); });
     function tryLogin() {
