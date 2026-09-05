@@ -109,12 +109,19 @@
           `<button class="mat-chip" data-mat-date="${dateKey}" data-mat-period="${x.period}" data-mat-name="${x.name}" title="课前/课后资料">📎${window.Materials ? window.Materials.count(dateKey, x.period) : 0}</button>`;
         return `<div class="${cls}">
           <div class="tl-time">${x.start}<span class="tl-period">${x.period}</span></div>
-          <div class="tl-body"><span class="tl-emoji">${x.emoji}</span><span class="tl-name">${x.name}</span>${tag}${matBtn}</div>
-        </div>`;
-      }).join('');
-    } else {
-      schedHtml = '<div class="empty"><span class="empty-emoji">🎈</span>周末愉快，好好休息～</div>';
-    }
+<div class="tl-body"><span class="tl-emoji">${x.emoji}</span><span class="tl-name">${x.name}</span>${tag}${matBtn}</div>
+          </div>`;
+        }).join('');
+      } else {
+        schedHtml = '<div class="empty"><span class="empty-emoji">🎈</span>周末愉快，好好休息～</div>';
+      }
+
+      // 今日计划（待办 + 待复习 + 当前例程 + 错题待攻克）
+      const dueRev = (window.Review && window.Review.dueCount) ? window.Review.dueCount() : 0;
+      const wbUn = (window.Exam && window.Exam.weekendSummaryHtml) ? 0 : 0;
+      const todoN = todos.filter(t => !t.done).length;
+      const routineStep = (window.Routine && window.Routine.stateOf) ? window.Routine.stateOf() : null;
+      const isParent = window.Parent && window.Parent.currentMode && window.Parent.currentMode() === 'parent';
 
     // 深圳提示（上学时间/睡眠）
     const cal = D().SZ_CALENDAR;
@@ -159,6 +166,29 @@
         ${statCard('✅', todayHabitCount(), '今日习惯', 'linear-gradient(135deg,#B5EAD7,#6BC9A8)', '#2D7A55')}
       </div>
 
+      ${(() => {
+        const planItems = [];
+        if (todoN) planItems.push({ emoji: '🎒', text: '完成今日 ' + todoN + ' 个小任务', act: 'openTodos' });
+        if (dueRev) planItems.push({ emoji: '🧠', text: '复习 ' + dueRev + ' 个已学内容', act: 'openReview' });
+        if (window.Exam) {
+          const d = (state && state.data && state.data.wrongBook) || [];
+          const un = d.filter(x => !x.mastered).length;
+          if (un) planItems.push({ emoji: '📕', text: '复盘 ' + un + ' 道错题', act: 'openDrill' });
+          const week = [0, 6].includes(new Date().getDay()) && un;
+          if (week) planItems.push({ emoji: '🗓️', text: '周末错题复盘时间', act: 'openWrongBook' });
+        }
+        if (routineStep && routineStep.cur && !routineStep.allDone) planItems.push({ emoji: '🎯', text: '继续放学例程：' + routineStep.cur.step.emoji + ' ' + routineStep.cur.step.name, act: 'openRoutine' });
+        if (!planItems.length) planItems.push({ emoji: '🌟', text: '今天任务都达成啦，可以自由玩了～', act: 'noop' });
+        return planItems.length ? `<div class="card" style="background:linear-gradient(135deg,#FFE066,#FFB6D9);margin-bottom:14px">
+          <div class="card-title" style="color:#5B3A00">🎯 今天要做什么 <span class="t-sub">（${planItems.length} 项）</span></div>
+          ${planItems.map(p => `<div class="today-plan-row" data-plan="${p.act}" style="cursor:pointer">
+            <span class="tpr-emoji">${p.emoji}</span>
+            <span class="tpr-text">${p.text}</span>
+            <span class="tpr-go">→</span>
+          </div>`).join('')}
+        </div>` : '';
+      })()}
+
       <div class="grid-2">
         <div class="card">
           ${isOverridden ? `<div class="alert alert-warn" style="margin-bottom:12px">
@@ -200,6 +230,8 @@
             <div class="card-title">🔮 明天的课程</div>
             <div id="tomorrowList">${tomorrowHtml()}</div>
           </div>
+
+          ${window.Routine ? `<div id="routineWidgetHost"></div>` : ''}
         </div>
       </div>
     `;
@@ -311,6 +343,17 @@
               </div>
             </div>`;
           }).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔄 学习闭环 <span class="t-sub">（练 → 错 → 记 → 复盘 → 再练）</span></div>
+        <div class="view-sub" style="margin-bottom:10px">做错的题自动收进错题本 · 周末复盘 · 限时挑战练反应速度</div>
+        <div class="study-act-grid">
+          <button class="btn-sm btn-purple" id="examCenterBtn">📡 学习闭环</button>
+          <button class="btn-sm btn-yellow" id="examWrongBtn">📕 错题本</button>
+          <button class="btn-sm btn-pink" id="examTimedBtn">⏱️ 限时挑战</button>
+          ${window.Review ? '<button class="btn-sm btn-green" id="examReviewBtn">🔁 间隔复习</button>' : ''}
         </div>
       </div>
     `;
@@ -674,18 +717,38 @@
       </div>
 
       <div class="card">
-        <div class="card-title">🎁 奖励商城 <span class="t-sub">（用星星兑换）</span></div>
+        <div class="card-title">🎁 奖励商城 <span class="t-sub">（体验型为主，避免过度物质奖励）</span></div>
         <div class="reward-grid">
           ${rewards.map(r => {
             const ok = stars >= r.cost;
+            const cust = !!r.custom; // 自定义
             return `<div class="reward-card ${ok ? '' : 'locked'}" data-reward="${r.id}">
               <div class="reward-emoji">${r.emoji}</div>
-              <div class="reward-name">${r.name}</div>
+              <div class="reward-name">${esc(r.name)}</div>
               <div class="reward-cost">⭐ ${r.cost}</div>
-              ${ok ? '<div class="view-sub" style="color:var(--green-deep);font-weight:700">点击兑换</div>' : '<div class="view-sub">还差 ' + (r.cost - stars) + ' ⭐</div>'}
+              ${cust ? '<span class="reward-tag tag-self">自定义</span>' : (r.type === 'experience' ? '<span class="reward-tag tag-exp">体验型</span>' : '<span class="reward-tag tag-mat">实物</span>')}
+              ${ok ? '<div class="view-sub" style="color:var(--green-deep);font-weight:700">点击申请</div>' : '<div class="view-sub">还差 ' + (r.cost - stars) + ' ⭐</div>'}
             </div>`;
           }).join('')}
         </div>
+        <div class="input-row" style="margin-top:12px;flex-wrap:wrap;gap:10px">
+          <button class="btn-sm btn-purple" id="addCustomRewardBtn">＋ 自定义奖励</button>
+          <button class="btn-sm btn-yellow" id="manageRewardsBtn">⚙️ 编辑奖励列表</button>
+        </div>
+        ${(s.rewardRequests && s.rewardRequests.length) ? `<div class="alert alert-info" style="margin-top:10px"><span class="alert-emoji">📬</span>
+          <div><b>${s.rewardRequests.filter(x => x.status === 'pending').length}</b> 个兑换待家长批准
+          <button class="btn-sm btn-purple" id="openRewardMgrBtn" style="margin-left:8px">查看</button></div>
+        </div>` : ''}
+      </div>
+
+      <div class="card">
+        <div class="card-title">⭐ 立刻加分（C2 描述性表扬 + 星星）</div>
+        <div class="praise-chips" id="praiseChips"></div>
+        <div class="input-row" style="margin-top:8px">
+          <input type="text" id="praiseInput" placeholder="先说一句表扬，再点 ⭐ 加分" maxlength="40" />
+          <button class="btn-sm btn-yellow" id="praiseAddBtn">⭐ +1</button>
+        </div>
+        <div class="view-sub">系统会记录到「成长记忆」里。点击常用表扬可一键填。</div>
       </div>
 
       <div class="card">
@@ -724,13 +787,22 @@
     const endD = new Date(sem.end);
     const daysLeft = Math.max(0, Math.ceil((endD - now) / 86400000));
 
+    // 兑换申请待办数量
+    const pendReq = (s.rewardRequests || []).filter(x => x.status === 'pending').length;
+    const isParent = window.Parent && window.Parent.currentMode && window.Parent.currentMode() === 'parent';
+
     return `
       <div class="view-head">
         <div>
           <div class="view-title">👨‍👩‍👧 家长中心</div>
-          <div class="view-sub">今日学习报告 · 教育建议 · 深圳政策</div>
+          <div class="view-sub">${isParent ? '当前：家长模式（可改）' : '当前：儿童模式（切换后可改）'} · 报告 · 政策 · 数据管理</div>
         </div>
+        <button class="btn-sm ${isParent ? 'btn-yellow' : 'btn-purple'}" id="parentModeBtn">${isParent ? '🐰 切到儿童模式' : '👨‍👩‍👧 切到家长模式'}</button>
       </div>
+
+      ${pendReq ? `<div class="alert alert-warn"><span class="alert-emoji">📬</span>
+        <div><b>${pendReq}</b> 个奖励兑换待家长批准
+        <button class="btn-sm btn-purple" id="openRewardMgr" style="margin-left:8px">查看批准</button></div></div>` : ''}
 
       <div class="grid-4">
         ${statCard('✅', `${doneCheckin}/6`, '在校打卡', 'linear-gradient(135deg,#A5D8FF,#5BA8E5)', '#1B4F7A')}
@@ -748,6 +820,17 @@
         <div class="report-row"><span>运动锻炼</span><span class="report-val">${sportN} 项</span></div>
         <div class="report-row"><span>获得星星</span><span class="report-val">+${s.stars?.today?.date === today ? s.stars.today.count : 0} ⭐</span></div>
         <div class="report-row"><span>连续打卡</span><span class="report-val">${s.streaks?.currentDays || 0} 天</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚙️ 家长功能 <span class="t-sub">（家长模式下可修改）</span></div>
+        <div class="input-row" style="flex-wrap:wrap;gap:10px">
+          <button class="btn-sm btn-pink" id="weekReportBtn">📅 本周报告</button>
+          <button class="btn-sm btn-yellow" id="monthReportBtn">🗓 本月报告</button>
+          <button class="btn-sm btn-green" id="noticeBtn">📝 作业/通知登记</button>
+          <button class="btn-sm btn-purple" id="archiveBtn">📦 学期档案导出</button>
+          <button class="btn-sm btn-gray" id="trashBtn">🗑 回收站 ${(window.Trash ? '(' + window.Trash.list().length + ')' : '')}</button>
+        </div>
       </div>
 
       <div class="card">
