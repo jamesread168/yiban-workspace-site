@@ -20,11 +20,11 @@
   function currentMode() { return sessionStorage.getItem(MODE_KEY) || 'child'; }
 
   function setMode(m) {
-    sessionStorage.setItem(MODE_KEY, m);
+    try { sessionStorage.setItem(MODE_KEY, m); } catch (e) {}
     document.body.classList.toggle('parent-mode', m === 'parent');
     document.body.classList.toggle('child-mode', m === 'child');
     document.dispatchEvent(new CustomEvent('modechange', { detail: m }));
-    if (window.appRender) window.appRender();
+    try { if (window.appRender) window.appRender(); } catch (e) { toast('切换模式失败：' + e.message); }
   }
 
   function ensurePin() {
@@ -51,16 +51,27 @@
       `);
       const m = document.querySelector('#modalLayer');
       m.querySelector('[data-cancel]').addEventListener('click', () => window.closeModal());
-      m.querySelector('[data-ok]').addEventListener('click', () => {
-        const a = (m.querySelector('#pinFirst').value || '').trim();
-        const b = (m.querySelector('#pinSecond').value || '').trim();
-        if (!/^\d{4}$/.test(a) || a !== b) { toast('两次密码不一致或格式错误'); return; }
-        setPin(a);
-        setMode('parent');
-        toast('已切换到家长模式 👨‍👩‍👧');
-        window.closeModal();
-        if (onOk) onOk();
-      });
+      m.querySelector('[data-cancel]').addEventListener('click', () => window.closeModal());
+      const i1 = m.querySelector('#pinFirst'), i2 = m.querySelector('#pinSecond');
+      const doSet = () => {
+        try {
+          const a = (i1.value || '').trim();
+          const b = (i2.value || '').trim();
+          if (!/^\d{4}$/.test(a) || a !== b) { toast('两次密码不一致或格式错误'); return; }
+          setPin(a);
+          setMode('parent');
+          toast('已切换到家长模式 👨‍👩‍👧');
+          window.closeModal();
+          if (onOk) onOk();
+        } catch (e) { toast('设置密码失败：' + e.message); }
+      };
+      const okBtn = m.querySelector('[data-ok]');
+      okBtn.addEventListener('click', doSet);
+      okBtn.addEventListener('touchend', e => { if (e && e.preventDefault) e.preventDefault(); doSet(); });
+      i1.addEventListener('keypress', e => { if (e.key === 'Enter') doSet(); });
+      i1.addEventListener('keydown', e => { if (e.key === 'Enter') doSet(); });
+      i2.addEventListener('keypress', e => { if (e.key === 'Enter') doSet(); });
+      i2.addEventListener('keydown', e => { if (e.key === 'Enter') doSet(); });
       return;
     }
     // 已经有 PIN，要求输入
@@ -76,21 +87,26 @@
     `);
     const m = document.querySelector('#modalLayer');
     m.querySelector('[data-cancel]').addEventListener('click', () => window.closeModal());
-    m.querySelector('[data-ok]').addEventListener('click', tryLogin);
     const inp = m.querySelector('#pinInput');
-    inp.addEventListener('keypress', e => { if (e.key === 'Enter') tryLogin(); });
     function tryLogin() {
-      const v = (inp.value || '').trim();
-      if (v !== ensurePin()) {
-        toast('密码错误，再试一次～');
-        inp.value = ''; inp.focus();
-        return;
-      }
-      setMode('parent');
-      toast('已切换到家长模式 👨‍👩‍👧');
-      window.closeModal();
-      if (onOk) onOk();
+      try {
+        const v = (inp.value || '').trim();
+        if (v !== ensurePin()) {
+          toast('密码错误，再试一次～');
+          inp.value = ''; inp.focus();
+          return;
+        }
+        setMode('parent');
+        toast('已切换到家长模式 👨‍👩‍👧');
+        window.closeModal();
+        if (onOk) onOk();
+      } catch (e) { toast('切换失败：' + e.message); }
     }
+    const okBtn = m.querySelector('[data-ok]');
+    okBtn.addEventListener('click', tryLogin);
+    okBtn.addEventListener('touchend', e => { if (e && e.preventDefault) e.preventDefault(); tryLogin(); });
+    inp.addEventListener('keypress', e => { if (e.key === 'Enter') tryLogin(); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
   }
 
   function uiBar() {
