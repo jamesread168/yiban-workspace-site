@@ -785,3 +785,183 @@ input, textarea, select { font-family: inherit; border: none; outline: none; }
   .hz-char { font-size: 68px; }
   .zi-grid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); }
 }
+
+/* ============ A1 错因提问 ============ */
+.reason-ask { background: rgba(255,255,255,0.96); border: 2px dashed #C75A92; border-radius: 14px; padding: 12px 14px; margin-top: 12px; }
+.ra-title { font-weight: 800; color: #C75A92; margin-bottom: 8px; }
+.ra-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.ra-btn { background: #fff; border: 2px solid #EEE; border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.ra-btn:hover { border-color: #C75A92; }
+.ra-btn.picked { background: #FFE6F2; border-color: #C75A92; }
+.ra-emoji { font-size: 18px; }
+.ra-done { color: #2D7A55; font-weight: 700; }
+.ra-hint { display: block; font-weight: 400; color: #5A5A70; font-size: 12px; margin-top: 4px; }
+
+/* ============ A1-A5 错题本 / 学习闭环 / 限时挑战 ============ */
+.wb-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.wb-sum-item { background: linear-gradient(135deg, #FFE6F2, #FFF0E0); border-radius: 10px; padding: 12px; text-align: center; }
+.wb-sum-item b { font-size: 22px; font-weight: 900; color: #C75A92; display: block; }
+.wb-sum-item span { font-size: 12px; color: #5A5A70; }
+.wb-reason { background: #fff; border: 1px solid #EEE; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+.wb-reason-title { font-size: 13px; font-weight: 800; color: #5B3A00; margin-bottom: 6px; }
+.wb-reason-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
+.wb-reason-bar { flex: 1; background: #F4F4F8; border-radius: 999px; height: 8px; overflow: hidden; }
+.wb-reason-bar span { display: block; background: linear-gradient(135deg, #C75A92, #FFE066); height: 100%; transition: width .3s; }
+.wb-group { margin-bottom: 12px; }
+.wb-group-title { font-size: 14px; font-weight: 800; padding: 8px 12px; border-radius: 10px 10px 0 0; display: flex; align-items: center; gap: 6px; }
+.wb-item { background: #fff; border: 1px solid #EEE; border-radius: 0 0 10px 10px; padding: 10px 12px; margin-bottom: 6px; }
+.wb-item.mastered { opacity: 0.55; background: #F4F8F4; }
+.wb-q { font-weight: 700; color: #3A3A4E; margin-bottom: 4px; font-size: 14px; }
+.wb-ans { font-size: 13px; color: #5A5A70; margin-bottom: 4px; }
+.wb-picked { color: #C75A92; }
+.wb-meta { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
+.wb-tag { font-size: 11px; background: #F4F4F8; color: #5A5A70; padding: 2px 8px; border-radius: 999px; }
+.wb-tag.ok { background: #E0F5E8; color: #2D7A55; }
+.wb-tag.star { background: #FFE6F2; color: #C75A92; }
+.wb-date { font-size: 11px; color: #9A9AAB; margin-left: auto; }
+.wb-ops { display: flex; gap: 6px; margin-top: 6px; }
+.reason-unknown { background: #FFE6F2; color: #C75A92; }
+.reason-misread { background: #FFF6E0; color: #B25500; }
+.reason-careless { background: #E0F5E8; color: #2D7A55; }
+
+/* A2 错题复盘 */
+.drill-q { font-size: 20px; font-weight: 800; color: #3A3A4E; text-align: center; margin: 16px 0; }
+.drill-tip { background: linear-gradient(135deg, #FFE066, #FFB6D9); color: #5B3A00; font-size: 13px; padding: 8px 12px; border-radius: 999px; display: inline-block; margin: 0 auto; }
+.drill-meta { font-size: 12px; color: #9A9AAB; text-align: center; margin-top: 14px; }
+.quiz-feedback { padding: 12px; border-radius: 10px; margin-top: 10px; font-size: 15px; }
+.quiz-feedback.ok { background: #E0F5E8; color: #2D7A55; }
+.quiz-feedback.no { background: #FFE6F2; color: #C75A92; }
+
+/* A5 限时挑战 */
+.timed-bar { height: 8px; background: #F4F4F8; border-radius: 999px; overflow: hidden; margin: 0 0 12px; }
+.timed-bar span { display: block; background: linear-gradient(135deg, #FF7AB6, #FFE066); height: 100%; transition: width .2s linear; }
+.timed-score { text-align: center; font-size: 13px; color: #5A5A70; margin-bottom: 8px; }
+.study-act-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ============ A4 间隔复习 ============ */
+.rv-widget { background: #fff; border: 1px solid #EEE; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.rvw-icon { font-size: 26px; }
+.rvw-body { flex: 1; }
+.rvw-title { font-weight: 800; color: #3A3A4E; }
+.rvw-sub { font-size: 12px; color: #9A9AAB; }
+.rvw-ops { display: flex; gap: 6px; }
+.rv-add-grid { display: grid; gap: 8px; }
+.rv-add { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.rv-add-emoji { font-size: 22px; }
+.rv-add-lab { font-weight: 700; min-width: 40px; }
+.rv-add-sel { flex: 1; padding: 6px 8px; border-radius: 8px; border: 1px solid #DDD; font-size: 13px; }
+.rv-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fff; border: 1px solid #EEE; border-radius: 10px; margin-bottom: 6px; }
+.rv-emoji { font-size: 22px; }
+.rv-body { flex: 1; }
+.rv-name { font-weight: 700; color: #3A3A4E; }
+.rv-meta { font-size: 11px; color: #9A9AAB; margin-top: 2px; }
+.rv-ops { display: flex; gap: 6px; }
+.rv-arch { display: flex; flex-wrap: wrap; gap: 6px; }
+.rv-arch-tag { background: #E0F5E8; color: #2D7A55; padding: 4px 10px; border-radius: 999px; font-size: 12px; cursor: pointer; }
+.rv-arch-tag:hover { background: #C5EAD0; }
+
+/* flash 翻面卡片 */
+.flash-card { perspective: 800px; max-width: 360px; margin: 18px auto; }
+.flash-front, .flash-back { background: linear-gradient(135deg, #FFF, #F8F8FF); border: 2px solid #C9B6FF; border-radius: 18px; padding: 24px 18px; min-height: 140px; }
+.flash-back { background: linear-gradient(135deg, #E0F5E8, #B5EAD7); border-color: #6BC9A8; }
+.flash-type { font-size: 12px; color: #9A9AAB; margin-bottom: 6px; }
+.flash-name { font-size: 28px; font-weight: 900; color: #4A3A7A; margin-bottom: 10px; }
+.flash-hint { font-size: 13px; color: #5A5A70; }
+
+/* ============ B2 例程引导 ============ */
+.rt-widget { background: linear-gradient(135deg, #FFE066, #FFB570); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
+.rt-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.rt-title { font-weight: 800; color: #6B3A00; font-size: 15px; }
+.rt-pct { font-weight: 700; color: #6B3A00; margin-left: auto; }
+.rt-bar { flex: 0 0 100px; height: 8px; background: rgba(255,255,255,.5); border-radius: 999px; overflow: hidden; }
+.rt-bar span { display: block; height: 100%; background: linear-gradient(135deg, #FF7AB6, #C75A92); }
+.rt-list { display: grid; gap: 4px; margin-bottom: 10px; }
+.rt-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: rgba(255,255,255,.6); border-radius: 8px; font-size: 12px; }
+.rt-row.on { background: rgba(255,255,255,.95); box-shadow: 0 0 0 2px #C75A92; }
+.rt-row.past { opacity: 0.5; }
+.rt-num { width: 22px; height: 22px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.rt-row.past .rt-num { background: #6BC9A8; color: #fff; }
+.rt-emoji { font-size: 18px; }
+.rt-name { flex: 1; font-weight: 700; color: #3A3A4E; }
+.rt-meta { font-size: 11px; color: #9A9AAB; }
+.rt-clock { font-family: ui-monospace, monospace; font-size: 12px; color: #5B3A00; }
+.rt-clock.over, .rt-timer.over { color: #C75A92; font-weight: 800; }
+.rt-actions { display: flex; gap: 8px; }
+.rt-saved { font-size: 12px; color: #6B3A00; background: rgba(255,255,255,.5); border-radius: 8px; padding: 4px 10px; margin-top: 6px; display: inline-block; }
+
+/* 例程 step 详情页 */
+.rt-bigemoji { font-size: 64px; text-align: center; }
+.rt-bigname { font-size: 20px; font-weight: 800; text-align: center; color: #3A3A4E; }
+.rt-timer { font-size: 32px; font-weight: 900; text-align: center; color: #FF7AB6; font-family: ui-monospace, monospace; }
+.rt-overall-bar { height: 8px; background: #F4F4F8; border-radius: 999px; overflow: hidden; margin-bottom: 8px; }
+.rt-overall-bar span { display: block; height: 100%; background: linear-gradient(135deg, #FF7AB6, #C75A92); }
+.rt-overall-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #F8F8FC; border-radius: 8px; margin-bottom: 4px; }
+.rt-done-tag { background: #E0F5E8; color: #2D7A55; padding: 3px 8px; border-radius: 999px; font-size: 11px; }
+
+/* ============ G2 今天要做什么 ============ */
+.today-plan-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,.6); border-radius: 10px; margin-bottom: 6px; transition: background .15s; }
+.today-plan-row:hover { background: rgba(255,255,255,.95); }
+.tpr-emoji { font-size: 22px; }
+.tpr-text { flex: 1; font-weight: 700; color: #5B3A00; font-size: 14px; }
+.tpr-go { color: #C75A92; font-size: 18px; }
+
+/* ============ C1/C2/C5 奖励升级 ============ */
+.reward-tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-top: 4px; display: inline-block; }
+.reward-tag.tag-exp { background: #E0F5E8; color: #2D7A55; }
+.reward-tag.tag-mat { background: #FFE6F2; color: #C75A92; }
+.reward-tag.tag-self { background: #FFF6E0; color: #B25500; }
+.praise-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* C5 兑换申请列表 */
+.rw-req { background: #fff; border: 1px solid #EEE; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.rw-req.rejected { opacity: 0.5; }
+.rw-req-head { display: flex; align-items: center; gap: 8px; }
+.rw-req-emoji { font-size: 22px; }
+.rw-req-name { flex: 1; font-weight: 700; }
+.rw-req-cost { font-weight: 800; color: #FFA500; }
+.rw-req-status { font-size: 12px; padding: 3px 10px; border-radius: 999px; }
+.rw-req-status.s-pending { background: #FFF6E0; color: #B25500; }
+.rw-req-status.s-approved { background: #E0F5E8; color: #2D7A55; }
+.rw-req-status.s-rejected { background: #F4F4F8; color: #9A9AAB; }
+.rw-req-meta { font-size: 11px; color: #9A9AAB; margin: 4px 0; }
+.rw-req-ops { display: flex; gap: 6px; margin-top: 6px; }
+
+/* ============ 家长中心 ============ */
+.pc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.pc-tile { background: linear-gradient(135deg, #FFF, #F8F8FF); border: 1px solid #EEE; border-radius: 12px; padding: 14px 12px; text-align: left; cursor: pointer; transition: transform .15s; }
+.pc-tile:hover { transform: translateY(-2px); }
+.pc-tile-emoji { font-size: 30px; margin-bottom: 6px; }
+.pc-tile-name { font-weight: 800; color: #3A3A4E; margin-bottom: 4px; font-size: 13px; }
+.pc-tile-desc { font-size: 11px; color: #9A9AAB; }
+
+.report-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+.report-cell { background: linear-gradient(135deg, #FFF, #F8F8FF); border: 1px solid #EEE; border-radius: 10px; padding: 10px 6px; text-align: center; }
+.report-num { font-size: 18px; font-weight: 900; color: #C75A92; }
+.report-lab { font-size: 11px; color: #9A9AAB; margin-top: 4px; }
+
+/* 报告标题（可打印） */
+.report-head { display: flex; gap: 10px; align-items: center; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid #FFB6D9; }
+.report-h-emoji { font-size: 36px; }
+.report-h-title { font-size: 18px; font-weight: 800; color: #C75A92; }
+.report-h-sub { font-size: 12px; color: #9A9AAB; }
+
+/* 通知登记 */
+.ntc-row { background: #fff; border: 1px solid #EEE; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.ntc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.ntc-tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+.ntc-tag.t-homework { background: #FFE6F2; color: #C75A92; }
+.ntc-tag.t-notice { background: #FFE066; color: #5B3A00; }
+.ntc-tag.t-supply { background: #B5EAD7; color: #2D7A55; }
+.ntc-date { font-size: 11px; color: #9A9AAB; margin-left: auto; }
+.ntc-body { font-size: 14px; color: #3A3A4E; }
+
+/* ============ 回收站 ============ */
+.trash-row { background: #fff; border: 1px solid #EEE; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; }
+.trash-kind { font-size: 11px; background: #FFE066; color: #5B3A00; padding: 2px 8px; border-radius: 999px; }
+.trash-meta { font-size: 11px; color: #9A9AAB; margin: 4px 0; }
+.trash-preview { font-size: 12px; color: #5A5A70; word-break: break-all; max-height: 60px; overflow: hidden; }
+.trash-ops { display: flex; flex-direction: column; gap: 4px; }
+
+/* ============ 家长模式条 ============ */
+#parentBar { z-index: 50; }
+#parentBar button { box-shadow: 0 6px 18px rgba(0,0,0,.15); }
