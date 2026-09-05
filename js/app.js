@@ -59,6 +59,66 @@ function updateSaveBtn() {
   }
 }
 
+// ============ 资料索引保护性合并 ============
+// 资料（附件）的本体存在云端仓库，索引存在数据里。
+// 只要条目 id 不同就视为不同文件，做并集，避免整包 LWW 时互相抹掉对方的附件。
+function mergeIndexGroup(localList, remoteList) {
+  const loc = Array.isArray(localList) ? localList.slice() : [];
+  const rem = Array.isArray(remoteList) ? remoteList : [];
+  const ids = new Set(loc.map(x => x && x.id));
+  let added = 0;
+  for (const e of rem) {
+    if (!e || !e.id || ids.has(e.id)) continue;
+    loc.push(e);
+    ids.add(e.id);
+    added++;
+  }
+  return { list: loc, added };
+}
+
+async function mergeRemoteIndexes() {
+  try {
+    const remote = await window.CloudSync.pull(state.data.roomId);
+    if (!remote || !remote.data) return 0;
+    return mergeIndexesFrom(remote.data);
+  } catch (e) {
+    return 0;   // 合并失败不阻断保存
+  }
+}
+
+// 从一份已知的远端数据里补索引（无需再拉一次）
+function mergeIndexesFrom(r) {
+  try {
+    if (!r || typeof r !== 'object') return 0;
+    let added = 0;
+
+    // 科目资料：{ 科目: [entry] }
+    if (r.subjectMaterials && typeof r.subjectMaterials === 'object') {
+      if (!state.data.subjectMaterials) state.data.subjectMaterials = {};
+      for (const s of Object.keys(r.subjectMaterials)) {
+        const res = mergeIndexGroup(state.data.subjectMaterials[s], r.subjectMaterials[s]);
+        state.data.subjectMaterials[s] = res.list;
+        added += res.added;
+      }
+    }
+    // 每节课资料：{ 日期: { 节次: [entry] } }
+    if (r.materials && typeof r.materials === 'object') {
+      if (!state.data.materials) state.data.materials = {};
+      for (const dk of Object.keys(r.materials)) {
+        if (!state.data.materials[dk]) state.data.materials[dk] = {};
+        for (const p of Object.keys(r.materials[dk] || {})) {
+          const res = mergeIndexGroup(state.data.materials[dk][p], r.materials[dk][p]);
+          state.data.materials[dk][p] = res.list;
+          added += res.added;
+        }
+      }
+    }
+    return added;
+  } catch (e) {
+    return 0;   // 合并失败不阻断保存
+  }
+}
+
 // 统一的"保存"动作：先写本机，再按需推云端
 async function saveAll() {
   if (state.saving) return;
@@ -78,6 +138,14 @@ async function saveAll() {
     const cloudOnline = cloudConfigured && window.CloudSync.getStatus() === 'online';
 
     if (cloudOnline) {
+      // 推送前先把云端已有的资料索引合并进来：
+      // 别的设备上传的附件索引，本机可能还没拉到，
+      // 直接整包推上去会把它们抹掉（附件本体在云端，索引没了就永远看不到）
+      const added = await mergeRemoteIndexes();
+      if (added > 0) {
+        window.SyncAPI.saveData(state.data);
+        showToast('已合并云端 ' + added + ' 个资料索引 🔗');
+      }
       // 用 forcePush 强制推一次，绕过 autoPushEnabled 关闭状态
       const res = await window.CloudSync.sync(state.data.roomId, state.data, { forcePush: true });
       if (res && res.ok !== false && res.reason !== 'pending-push') {
@@ -857,6 +925,14 @@ function startCloudAuto() {
     // 检测到远端更新不再自动覆盖本机，改为弹出确认横幅
     (remoteData, source) => {
       if (!remoteData) return;
+      // 附件是"只增"的资源：别的设备新上传的附件索引先自动补进来，
+      // 不必等用户确认整包覆盖（否则用户没点横幅就永远看不到新附件）
+      const n = mergeIndexesFrom(remoteData);
+      if (n > 0) {
+        window.SyncAPI.saveData(state.data);
+        render();
+        showToast('已收到其他设备的 ' + n + ' 个新附件 📎');
+      }
       promptRemoteUpdate(remoteData, source || '轮询检测');
     },
     // 本机服务端延迟极低，4 秒轮询 + SSE 实时推送；云端为了省请求用 20 秒
@@ -873,6 +949,25 @@ function startCloudAuto() {
         window.CloudSync.runOnce();
       }
     });
+  }
+
+  // 附件索引兜底：不管时间戳谁新，定期直接拉云端，把本机缺的附件索引补进来。
+  // 只要某台设备的时间戳被刷乱，LWW 就不会提示更新，附件会永远卡在另一端，
+  // 这条通道保证"别的设备上传的附件一定能看到"。
+  if (!startCloudAuto._matTimer) {
+    const pullMaterials = async () => {
+      try {
+        if (window.CloudSync.getStatus() !== 'online') return;
+        const n = await mergeRemoteIndexes();
+        if (n > 0) {
+          window.SyncAPI.saveData(state.data);
+          render();
+          showToast('已收到其他设备的 ' + n + ' 个新附件 📎');
+        }
+      } catch (e) { /* 静默，下次重试 */ }
+    };
+    startCloudAuto._matTimer = setInterval(pullMaterials, 30000);
+    setTimeout(pullMaterials, 3000);   // 打开页面后先补一次
   }
 }
 
@@ -1101,6 +1196,68 @@ function bindCloud() {
         btn.disabled = false;
       }
       updateCloudStatus();
+    });
+  }
+
+  // 无视时间戳，强行用云端数据覆盖本机（本机时间戳被刷乱时的救济入口）
+  const pullBtn = $('#pullForceBtn');
+  if (pullBtn) {
+    pullBtn.addEventListener('click', async () => {
+      pullBtn.disabled = true;
+      showToast('正在拉取云端数据…');
+      try {
+        const remote = await window.CloudSync.pull(state.data.roomId);
+        if (!remote || !remote.data) { showToast('云端还没有数据'); return; }
+        if (!confirm('将用云端数据完整覆盖本机。\n本机未保存的修改会丢失，确定继续吗？')) return;
+        const fresh = JSON.parse(JSON.stringify(remote.data));
+        fresh.roomId = state.data.roomId;
+        state.data = fresh;
+        window.SyncAPI.saveData(state.data);
+        state.dirty = false;
+        state.pendingCloud = false;
+        updateSaveBtn();
+        render();
+        showToast('已从云端拉取最新数据 📥');
+      } catch (e) {
+        showToast('拉取失败：' + e.message);
+      } finally {
+        pullBtn.disabled = false;
+        updateCloudStatus();
+      }
+    });
+  }
+
+  // 无视时间戳，强行把本机数据推到云端
+  const pushBtn = $('#pushForceBtn');
+  if (pushBtn) {
+    pushBtn.addEventListener('click', async () => {
+      pushBtn.disabled = true;
+      showToast('正在推送本机数据…');
+      try {
+        const added = await mergeRemoteIndexes();
+        if (added > 0) {
+          window.SyncAPI.saveData(state.data);
+          showToast('先合并了云端 ' + added + ' 个资料索引，再推送');
+        }
+        state.data.updatedAt = Date.now();
+        window.SyncAPI.saveData(state.data);
+        const res = await window.CloudSync.push(state.data.roomId, state.data, state.data.updatedAt);
+        if (res && res.ok) {
+          state.dirty = false;
+          state.pendingCloud = false;
+          updateSaveBtn();
+          showToast('☁️ 已用本机数据覆盖云端');
+        } else if (res && res.conflict) {
+          showToast('云端有更新的数据，请改用「从云端拉取」');
+        } else {
+          showToast('推送失败：' + ((res && res.error) || '未知原因'));
+        }
+      } catch (e) {
+        showToast('推送失败：' + e.message);
+      } finally {
+        pushBtn.disabled = false;
+        updateCloudStatus();
+      }
     });
   }
 
