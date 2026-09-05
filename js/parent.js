@@ -330,23 +330,32 @@
         checkinDays: Object.values(d.checkins || {}).reduce((n, o) => n + Object.values(o || {}).filter(Boolean).length, 0),
       },
       badDays: Object.values(d.mood || {}).filter(x => x && x.emoji === '😢').length,
-      weekly: (function () {
-        const out = [];
-        for (let i = 0; i < 12; i++) {
-          const days = dayRange(7); // last 12 weeks
-          if (!out.length) out.push(summary);
-        }
-        return weeklySummary();
-      })(),
+      weekly: weeklySummary(),
+      monthly: monthlySummary(),
     };
 
-    const blob = new Blob([JSON.stringify({ data: d, summary }, null, 2)], { type: 'application/json' });
+    let json;
+    try {
+      json = JSON.stringify({ data: d, summary }, null, 2);
+    } catch (e) {
+      toast('导出失败：数据无法序列化 (' + e.message + ')');
+      return;
+    }
+
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = '成长档案_' + (d.profile?.nickname || 'student') + '_' + new Date().toISOString().slice(0, 10) + '.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-    toast('已导出成长档案 📦');
+    document.body.appendChild(a);
+    try { a.click(); } catch (e) {}
+    document.body.removeChild(a);
+
+    // iOS/微信内置浏览器会静默拦截编程式点击下载，延迟 revoke 并给 toast 反馈
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      toast('已导出成长档案 📦');
+    }, 600);
   }
 
   // ============ E3 通知/作业登记（注册入待办）============
