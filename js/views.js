@@ -116,12 +116,13 @@
         schedHtml = '<div class="empty"><span class="empty-emoji">🎈</span>周末愉快，好好休息～</div>';
       }
 
-      // 今日计划（待办 + 待复习 + 当前例程 + 错题待攻克）
-      const dueRev = (window.Review && window.Review.dueCount) ? window.Review.dueCount() : 0;
-      const wbUn = (window.Exam && window.Exam.weekendSummaryHtml) ? 0 : 0;
-      const todoN = todos.filter(t => !t.done).length;
-      const routineStep = (window.Routine && window.Routine.stateOf) ? window.Routine.stateOf() : null;
-      const isParent = window.Parent && window.Parent.currentMode && window.Parent.currentMode() === 'parent';
+// 今日计划（待办 + 待复习 + 当前例程 + 错题待攻克）
+    const todos = (s.todos || []).filter(t => !t.date || t.date === todayKey());
+    const dueRev = (window.Review && window.Review.dueCount) ? window.Review.dueCount() : 0;
+    const wbUn = (window.Exam && window.Exam.weekendSummaryHtml) ? 0 : 0;
+    const todoN = todos.filter(t => !t.done).length;
+    const routineStep = (window.Routine && window.Routine.stateOf) ? window.Routine.stateOf() : null;
+    const isParent = window.Parent && window.Parent.currentMode && window.Parent.currentMode() === 'parent';
 
     // 深圳提示（上学时间/睡眠）
     const cal = D().SZ_CALENDAR;
@@ -137,8 +138,6 @@
       alertHtml = `<div class="alert alert-good"><span class="alert-emoji">📋</span>
         <div>双减政策：小学一、二年级<b>不布置家庭书面作业</b>。建议安排阅读、运动和亲子游戏～</div></div>`;
     }
-
-    const todos = (s.todos || []).filter(t => !t.date || t.date === todayKey());
 
     return `
       ${alertHtml}
