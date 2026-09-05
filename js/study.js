@@ -138,6 +138,11 @@
         b.addEventListener('click', () => {
           const right = b.dataset.o === S.q.ans;
           if (right) S.score++;
+          else if (window.Exam) {
+            // 错题自动进错题本，并让孩子自评错因（粗心/看错/不会）
+            const e = window.Exam.markWrong(subId, 'pinyin', S.q.py, S.q.ans, b.dataset.o, S.q.opts);
+            window.Exam.askReason(e);
+          }
           modalEl().querySelectorAll('[data-o]').forEach(x => {
             x.disabled = true;
             if (x.dataset.o === S.q.ans) x.classList.add('correct');
@@ -145,9 +150,12 @@
           });
           showFeedback(right, S.q.ans);
           setTimeout(() => {
-            if (S.total >= 6) { award(subId, 'pinyin', 2); openSubject(subId); }
+            if (S.total >= 6) {
+              if (window.Exam) window.Exam.finish(subId, 'pinyin', S.total, S.score);
+              award(subId, 'pinyin', 2); openSubject(subId);
+            }
             else { window.openModal(build()); bind(); }
-          }, 900);
+          }, right ? 900 : 2000);
         });
       });
       const sk = modalEl().querySelector('[data-skip]');
@@ -329,6 +337,10 @@
           const cur = window._curMath;
           const right = v === cur.ans;
           if (right) S.score++;
+          else if (window.Exam) {
+            const e = window.Exam.markWrong(subId, actId, cur.q, cur.ans, v, cur.opts);
+            window.Exam.askReason(e);
+          }
           modalEl().querySelectorAll('[data-v]').forEach(x => {
             x.disabled = true;
             if (parseInt(x.dataset.v, 10) === cur.ans) x.classList.add('correct');
@@ -337,9 +349,12 @@
           // 明确告诉孩子 对 / 错，并显示正确答案
           showFeedback(right, cur.ans);
           setTimeout(() => {
-            if (S.total >= 8) { award(subId, actId, 2); openSubject(subId); }
+            if (S.total >= 8) {
+              if (window.Exam) window.Exam.finish(subId, actId, S.total, S.score);
+              award(subId, actId, 2); openSubject(subId);
+            }
             else { window.openModal(build()); bind(); }
-          }, right ? 650 : 1100);
+          }, right ? 650 : 2100);
         });
       });
       bindBack(subId);
@@ -376,12 +391,19 @@
         b.addEventListener('click', () => {
           const right = b.dataset.n === cur.correct.name;
           if (right) score++;
+          else if (window.Exam) {
+            const e = window.Exam.markWrong(subId, 'shape', '请找出：' + cur.correct.name, cur.correct.name, b.dataset.n, cur.opts.map(o => o.name));
+            window.Exam.askReason(e);
+          }
           b.classList.add(right ? 'correct' : 'wrong');
           showFeedback(right, cur.correct.name);
           setTimeout(() => {
-            if (total >= 6) { award(subId, 'shape', 2); openSubject(subId); }
+            if (total >= 6) {
+              if (window.Exam) window.Exam.finish(subId, 'shape', total, score);
+              award(subId, 'shape', 2); openSubject(subId);
+            }
             else { window.openModal(build()); bind(); }
-          }, 700);
+          }, right ? 700 : 1900);
         });
       });
       bindBack(subId);
@@ -391,7 +413,7 @@
 
   // 8. 数数
   ACTIVITIES.count = function (subId) {
-    let n = 1, score = 0;
+    let n = 1, score = 0, total = 0;
     function build() {
       return screen(
         `<span class="ae">🧮</span><span class="at">数数练习</span><span class="as">${n}/20</span>`,
@@ -405,17 +427,27 @@
       modalEl().querySelectorAll('[data-v]').forEach(b => {
         b.addEventListener('click', () => {
           const right = parseInt(b.dataset.v, 10) === n;
+          total++;
           if (right) { score++; b.classList.add('correct'); }
-          else { b.classList.add('wrong'); }
+          else {
+            b.classList.add('wrong');
+            if (window.Exam) {
+              const e = window.Exam.markWrong(subId, 'count', '一共有几个●？（' + n + '）', n, b.dataset.v, [n - 1, n, n + 1].filter(x => x > 0));
+              window.Exam.askReason(e);
+            }
+          }
           // 数数：明确告知正确数量
           showFeedback(right, n);
           setTimeout(() => {
             if (right) {
-              if (n >= 20) { award(subId, 'count', 2); openSubject(subId); return; }
+              if (n >= 20) {
+                if (window.Exam) window.Exam.finish(subId, 'count', total, score);
+                award(subId, 'count', 2); openSubject(subId); return;
+              }
               n++;
             }
             window.openModal(build()); bind();
-          }, 700);
+          }, right ? 700 : 1900);
         });
       });
       bindBack(subId);
@@ -516,6 +548,10 @@
         b.addEventListener('click', () => {
           const right = b.dataset.w === cur.word;
           if (right) score++;
+          else if (window.Exam) {
+            const e = window.Exam.markWrong(subId, 'spell', cur.emoji + ' ' + cur.cn, cur.word, b.dataset.w, opts.map(o => o.word));
+            window.Exam.askReason(e);
+          }
           modalEl().querySelectorAll('[data-w]').forEach(x => {
             x.disabled = true;
             if (x.dataset.w === cur.word) x.classList.add('correct');
@@ -523,9 +559,12 @@
           });
           showFeedback(right, cur.word);
           setTimeout(() => {
-            if (total >= 6) { award(subId, 'spell', 2); openSubject(subId); }
+            if (total >= 6) {
+              if (window.Exam) window.Exam.finish(subId, 'spell', total, score);
+              award(subId, 'spell', 2); openSubject(subId);
+            }
             else { window.openModal(build()); bind(); }
-          }, 800);
+          }, right ? 800 : 2000);
         });
       });
       bindBack(subId);
