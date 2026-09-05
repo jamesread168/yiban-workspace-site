@@ -1501,13 +1501,17 @@ function fetchWeather() {
 }
 
 // ============ 弹窗工具（供 study.js 使用）============
-window.openModal = function (html) {
+window.openModal = function (html, opts) {
   const layer = $('#modalLayer');
   layer.querySelector('.modal-body').innerHTML = html;
   layer.classList.add('show');
   document.body.style.overflow = 'hidden';
+  window._modalOnClose = opts && opts.onClose ? opts.onClose : null;
 };
 window.closeModal = function () {
+  const cb = window._modalOnClose;
+  window._modalOnClose = null;
+  if (cb) cb();
   $('#modalLayer').classList.remove('show');
   document.body.style.overflow = '';
 };
