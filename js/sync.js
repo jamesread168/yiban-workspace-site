@@ -73,8 +73,14 @@ function initBroadcastChannel() {
   return bc;
 }
 
+// 保存并通知
+// 重要：这里【绝不】刷新 data.updatedAt。
+// updatedAt 是 LWW（最后写入者胜）的仲裁依据，只有「点保存 / 上传资料后同步」
+// 这类真正推云端的动作才能改它（见 app.js 的 saveAll）。
+// 若每次本地小编辑（打卡、勾待办）都刷时间戳，本机会永远"看起来比云端新"，
+// 结果：其他设备的新数据拉不进来，还会被本机这份旧数据反覆盖。
 function saveData(data, opts = {}) {
-  data.updatedAt = Date.now();
+  if (opts.bumpTs) data.updatedAt = Date.now();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   // 广播变更给同源其它标签页
   const ch = initBroadcastChannel();
