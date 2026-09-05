@@ -916,6 +916,10 @@
           <button class="btn-sm btn-green" id="syncNowBtn" style="margin-left:auto">强制推送本地</button>
         </div>
         <div class="view-sub" id="cloudLastSync" style="margin-top:6px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn-sm btn-yellow" id="pullForceBtn">📥 从云端拉取（覆盖本机）</button>
+          <button class="btn-sm btn-green" id="pushForceBtn">📤 推送本机（覆盖云端）</button>
+        </div>
         <div class="alert alert-info" style="margin-top:10px"><span class="alert-emoji">💡</span><div>
           <b>新行为</b>：本地编辑后<b>不会自动同步</b>，请点右上角 <b>💾 保存</b> 按钮（或 <kbd>Ctrl+S</kbd>）。<br/>
           其他设备有新数据时，会在右上角弹出横幅让你选择「<b>同步覆盖</b> / <b>保留本地</b>」。</div></div>
