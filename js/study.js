@@ -415,11 +415,15 @@
   ACTIVITIES.count = function (subId) {
     let n = 1, score = 0, total = 0;
     function build() {
+      const opts = [n];
+      if (n > 1) opts.push(n - 1);
+      opts.push(n + 1);
+      if (opts.length < 3) opts.push(n + 2);
       return screen(
         `<span class="ae">🧮</span><span class="at">数数练习</span><span class="as">${n}/20</span>`,
-        `<div class="count-q">一共有 <b>${n}</b> 个小球，对吗？</div>
+        `<div class="count-q">数一数，一共有几个小球？</div>
          <div class="count-dots">${Array.from({ length: n }, () => '<span class="dot">●</span>').join('')}</div>
-         <div class="count-opts">${shuffle([...new Set([Math.max(1, n - 1), n, n + 1])]).map(v => `<button class="count-opt" data-v="${v}">${v}</button>`).join('')}</div>`,
+         <div class="count-opts">${shuffle(opts).map(v => `<button class="count-opt" data-v="${v}">${v}</button>`).join('')}</div>`,
         '<button class="btn-sm btn-gray" data-back>返回</button>'
       );
     }
