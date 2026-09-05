@@ -445,20 +445,207 @@ function bindViewEvents() {
     });
   });
 
-  // ---- 奖励兑换 ----
+  // ---- 奖励兑换（C5 兑换需家长批准）----
   content.querySelectorAll('[data-reward]').forEach(c => {
     c.addEventListener('click', () => {
       const r = state.data.rewards.find(x => x.id === c.dataset.reward);
       if (!r) return;
       if ((state.data.stars?.total || 0) < r.cost) { showToast('星星还不够哦～'); return; }
-      if (!confirm(`确定用 ${r.cost} ⭐ 兑换「${r.name}」吗？`)) return;
-      state.data.stars.total -= r.cost;
-      window.SyncAPI.saveData(state.data); markDirty();
-      showToast(`🎉 兑换成功：${r.name}`);
+      if (window.Parent && window.Parent.currentMode && window.Parent.currentMode() === 'parent') {
+        // 家长模式：直接兑换
+        if (!confirm(`确定用 ${r.cost} ⭐ 兑换「${r.name}」吗？`)) return;
+        state.data.stars.total -= r.cost;
+        if (!Array.isArray(state.data.rewardHistory)) state.data.rewardHistory = [];
+        state.data.rewardHistory.push({ id: 'r' + Date.now(), name: r.name, cost: r.cost, at: Date.now(), mode: 'direct' });
+        window.SyncAPI.saveData(state.data); markDirty();
+        showToast(`🎉 兑换成功：${r.name}`); confetti();
+        render();
+      } else {
+        // 儿童模式：提出申请
+        if (!Array.isArray(state.data.rewardRequests)) state.data.rewardRequests = [];
+        if (state.data.rewardRequests.find(x => x.rewardId === r.id && x.status === 'pending')) {
+          showToast('已经申请过了，等家长批准哦～'); return;
+        }
+        state.data.rewardRequests.push({
+          id: 'r' + Date.now() + Math.random().toString(36).slice(2, 5),
+          rewardId: r.id, name: r.name, cost: r.cost, emoji: r.emoji, type: r.type,
+          status: 'pending', at: Date.now(),
+        });
+        window.SyncAPI.saveData(state.data); markDirty();
+        showToast(`📬 已申请「${r.name}」，等家长批准～`);
+        render();
+      }
+    });
+  });
+
+  // ---- C2 加星前描述性表扬 + 自动记入成长记忆 ----
+  const praiseChipsHost = content.querySelector('#praiseChips');
+  if (praiseChipsHost) {
+    const PRAISES = [
+      '你今天特别认真', '你愿意尝试', '你主动整理',
+      '你坚持到底', '你用礼貌用语', '你关心家人',
+      '你爱阅读', '你算得很准', '你写得很工整', '你很有条理',
+    ];
+    praiseChipsHost.innerHTML = PRAISES.map((p, i) => `<button class="btn-sm btn-pink" data-pr="${i}" style="margin:4px">${p}</button>`).join('');
+    praiseChipsHost.querySelectorAll('[data-pr]').forEach(b => b.addEventListener('click', () => {
+      const inp = content.querySelector('#praiseInput');
+      if (inp) inp.value = PRAISES[parseInt(b.dataset.pr, 10)];
+      inp && inp.focus();
+    }));
+  }
+  const praiseAddBtn = content.querySelector('#praiseAddBtn');
+  if (praiseAddBtn) {
+    praiseAddBtn.addEventListener('click', () => {
+      const txt = (content.querySelector('#praiseInput').value || '').trim();
+      awardStars(1, txt);
+      const inp = content.querySelector('#praiseInput');
+      if (inp) inp.value = '';
       confetti();
       render();
     });
+  }
+  // ---- C1 自定义奖励（体验型引导） ----
+  const addCustom = content.querySelector('#addCustomRewardBtn');
+  if (addCustom) addCustom.addEventListener('click', () => {
+    openModal(`
+      <div style="padding:14px 16px;border-bottom:1px solid #eee;background:linear-gradient(135deg,#C9B6FF,#A5D8FF)">
+        <div style="font-size:16px;font-weight:800;color:#1B4F7A">➕ 自定义奖励</div>
+        <div style="font-size:12px;color:#5A5A70;margin-top:3px">体验型优先（亲子游戏 / 多读一个故事 / 选晚餐），避免过度物质奖励</div>
+      </div>
+      <div style="padding:14px 16px">
+        <div class="input-row" style="margin-bottom:8px"><input type="text" id="rwEmoji" maxlength="2" placeholder="🧸" style="width:60px;padding:8px" /><input type="text" id="rwName" placeholder="奖励名称（推荐：体验型活动）" /></div>
+        <div class="input-row" style="margin-bottom:8px"><input type="number" id="rwCost" min="1" placeholder="需要的星星" /><select id="rwType"><option value="experience">体验型（推荐）</option><option value="material">实物</option></select></div>
+      </div>
+      <div class="act-foot"><button class="btn-sm btn-gray" data-cancel>取消</button><button class="btn-sm btn-yellow" data-ok>保存</button></div>
+    `);
+    const m = document.querySelector('#modalLayer');
+    m.querySelector('[data-cancel]').addEventListener('click', () => closeModal());
+    m.querySelector('[data-ok]').addEventListener('click', () => {
+      const emoji = (m.querySelector('#rwEmoji').value || '🎁').trim() || '🎁';
+      const name = (m.querySelector('#rwName').value || '').trim();
+      const cost = parseInt(m.querySelector('#rwCost').value, 10) || 10;
+      const type = m.querySelector('#rwType').value;
+      if (!name) { showToast('先填奖励名称'); return; }
+      if (!Array.isArray(state.data.rewards)) state.data.rewards = [];
+      state.data.rewards.push({ id: 'r' + Date.now() + Math.random().toString(36).slice(2, 5), name, emoji, cost, type, custom: true });
+      window.SyncAPI.saveData(state.data); markDirty();
+      closeModal();
+      showToast('已添加奖励 🎁');
+      render();
+    });
   });
+  const mgrRewBtn = content.querySelector('#manageRewardsBtn');
+  if (mgrRewBtn) mgrRewBtn.addEventListener('click', () => openRewardManager());
+  const openRwMgr = content.querySelector('#openRewardMgrBtn');
+  if (openRwMgr) openRwMgr.addEventListener('click', () => openRewardManager());
+
+  // ---- C5 兑换申请管理（家长处理） ----
+  function openRewardManager() {
+    const d = state.data;
+    const list = (d.rewardRequests || []).slice().sort((a, b) => b.at - a.at);
+    window.openModal(`
+      <div style="padding:14px 16px;border-bottom:1px solid #eee;background:linear-gradient(135deg,#FFE066,#FF7AB6)">
+        <div style="font-size:16px;font-weight:800;color:#5B3A00">📬 兑换申请管理</div>
+        <div class="view-sub" style="margin-top:3px;color:#7A5A20">儿童模式下的兑换会先到这里等家长批准</div>
+      </div>
+      <div style="padding:14px 16px;max-height:60vh;overflow-y:auto">
+        ${list.length ? list.map(r => `<div class="rw-req ${r.status}">
+          <div class="rw-req-head">
+            <span class="rw-req-emoji">${r.emoji || '🎁'}</span>
+            <span class="rw-req-name">${r.name}</span>
+            <span class="rw-req-cost">⭐ ${r.cost}</span>
+            <span class="rw-req-status s-${r.status}">${r.status === 'pending' ? '待批准' : r.status === 'approved' ? '已批准' : '已拒绝'}</span>
+          </div>
+          <div class="rw-req-meta">${new Date(r.at).toLocaleString('zh-CN')}</div>
+          ${r.status === 'pending' ? `<div class="rw-req-ops">
+            <button class="btn-sm btn-green" data-rr-ok="${r.id}">✅ 批准</button>
+            <button class="btn-sm btn-red" data-rr-no="${r.id}">❌ 拒绝</button>
+          </div>` : (r.status === 'approved' ? '<div class="view-sub" style="color:var(--green-deep)">已发放</div>' : '')}
+        </div>`).join('') : '<div class="empty"><span class="empty-emoji">📭</span>没有待处理的申请</div>'}
+      </div>
+      <div class="act-foot"><button class="btn-sm btn-gray" data-back>关闭</button></div>
+    `);
+    const m = document.querySelector('#modalLayer');
+    m.querySelector('[data-back]').addEventListener('click', () => closeModal());
+    m.querySelectorAll('[data-rr-ok]').forEach(b => b.addEventListener('click', () => {
+      const id = b.dataset.rrOk;
+      const r = list.find(x => x.id === id);
+      if (!r) return;
+      if ((state.data.stars?.total || 0) < r.cost) { showToast('星星已不足，无法批准'); return; }
+      r.status = 'approved'; r.decidedAt = Date.now();
+      state.data.stars.total -= r.cost;
+      if (!Array.isArray(state.data.rewardHistory)) state.data.rewardHistory = [];
+      state.data.rewardHistory.push({ id: 'r' + Date.now(), name: r.name, cost: r.cost, at: Date.now(), mode: 'parent-approved' });
+      window.SyncAPI.saveData(state.data); markDirty();
+      showToast('已批准 ✅');
+      render();
+      openRewardManager();
+    }));
+    m.querySelectorAll('[data-rr-no]').forEach(b => b.addEventListener('click', () => {
+      const id = b.dataset.rrNo;
+      const r = list.find(x => x.id === id);
+      if (!r) return;
+      r.status = 'rejected'; r.decidedAt = Date.now();
+      window.SyncAPI.saveData(state.data); markDirty();
+      showToast('已拒绝');
+      openRewardManager();
+    }));
+  }
+
+  // ---- 学习闭环按钮（A1-A5）----
+  const examCen = content.querySelector('#examCenterBtn');
+  if (examCen && window.Exam) examCen.addEventListener('click', () => window.Exam.openCenter());
+  const examWb = content.querySelector('#examWrongBtn');
+  if (examWb && window.Exam) examWb.addEventListener('click', () => window.Exam.openWrongBook());
+  const examTim = content.querySelector('#examTimedBtn');
+  if (examTim && window.Exam) examTim.addEventListener('click', () => window.Exam.openTimed());
+  const examRev = content.querySelector('#examReviewBtn');
+  if (examRev && window.Review) examRev.addEventListener('click', () => window.Review.openFlash());
+
+  // ---- 今天要做什么 卡片点击 ----
+  content.querySelectorAll('[data-plan]').forEach(r => {
+    r.addEventListener('click', () => {
+      const a = r.dataset.plan;
+      if (a === 'openTodos') {
+        const todoInput = content.querySelector('#todoInput');
+        if (todoInput) { todoInput.focus(); todoInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      } else if (a === 'openReview' && window.Review) window.Review.openFlash();
+      else if (a === 'openDrill' && window.Exam) {
+        const list = (state.data.wrongBook || []).filter(x => !x.mastered);
+        window.Exam.openDrill(list);
+      } else if (a === 'openWrongBook' && window.Exam) window.Exam.openWrongBook();
+      else if (a === 'openRoutine' && window.Routine) window.Routine.openCenter();
+    });
+  });
+
+  // ---- 家长中心按钮 ----
+  const pmBtn = content.querySelector('#parentModeBtn');
+  if (pmBtn) pmBtn.addEventListener('click', () => {
+    if (window.Parent) {
+      if (window.Parent.currentMode() === 'parent') window.Parent.setMode('child');
+      else window.Parent.askPin('parent');
+    }
+  });
+  const wkBtn = content.querySelector('#weekReportBtn');
+  if (wkBtn && window.Parent) wkBtn.addEventListener('click', () => window.Parent.openReport('week'));
+  const mnBtn = content.querySelector('#monthReportBtn');
+  if (mnBtn && window.Parent) mnBtn.addEventListener('click', () => window.Parent.openReport('month'));
+  const ntBtn = content.querySelector('#noticeBtn');
+  if (ntBtn && window.Parent) ntBtn.addEventListener('click', () => window.Parent.openNotice());
+  const arBtn = content.querySelector('#archiveBtn');
+  if (arBtn && window.Parent) arBtn.addEventListener('click', () => { closeModal(); window.Parent.exportArchive(); });
+  const trBtn = content.querySelector('#trashBtn');
+  if (trBtn && window.Trash) trBtn.addEventListener('click', () => window.Trash.open());
+  const ormBtn = content.querySelector('#openRewardMgr');
+  if (ormBtn) ormBtn.addEventListener('click', () => openRewardManager());
+
+  // ---- 例程 widget 渲染 ----
+  const rtHost = content.querySelector('#routineWidgetHost');
+  if (rtHost && window.Routine) {
+    rtHost.innerHTML = window.Routine.widgetHtml();
+    window.Routine.bindWidget();
+  }
+
 
   // ---- 家长中心 ----
   if ($('#exportData')) {
@@ -1434,6 +1621,94 @@ function init() {
       localStorage.setItem('yiban-wx-tip-closed', '1');
     });
   }
+
+  // ============ G5 存储容量风险提示 ============
+  (function () {
+    let used = 0;
+    try { for (const k in localStorage) if (localStorage.hasOwnProperty(k)) used += (localStorage[k].length + k.length); } catch (_) {}
+    const mb = used / 1024 / 1024;
+    if (mb > 3) {
+      const bar = document.createElement('div');
+      bar.style.cssText = 'position:fixed;left:10px;right:10px;bottom:12px;z-index:9997;background:rgba(0,0,0,.85);color:#fff;border-radius:12px;padding:12px 16px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+      bar.innerHTML = '<span style="font-size:22px">⚠️</span><span style="flex:1">本机存储已用 <b>' + mb.toFixed(1) + ' MB</b>。建议：① 把大附件上传到「科目资料」改用云端存储；② 旧错题在「错题本」已标记 ✅掌握的可清理；③ 周期性「导出数据」留个备份。</span><button id="capClose" style="background:rgba(255,255,255,.2);border-radius:50%;width:28px;height:28px;font-size:15px">×</button>';
+      document.body.appendChild(bar);
+      bar.querySelector('#capClose').addEventListener('click', () => bar.remove());
+    }
+  })();
+
+  // ============ G3 到点提醒通知 ============
+  (function () {
+    if (!('Notification' in window) || Notification.permission === 'denied') return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(function (p) {
+        if (p === 'granted') localStorage.setItem('yiban-notify', '1');
+      });
+    }
+    const ALERTS = [
+      { h: 7, m: 30, t: '⏰ 早安！还记得出门前检查一下：红领巾、课本、水壶～' },
+      { h: 16, m: 30, t: '📚 放学啦，先休息 10 分钟，再开始做作业～' },
+      { h: 17, m: 30, t: '⚽ 户外活动时间到了～跳绳 / 骑车 / 散步任选一项' },
+      { h: 20, m: 30, t: '🌙 该洗漱准备睡觉了～ 9 点前上床，争取明早精神满满' },
+    ];
+    const today = window.todayKey();
+    function maybeFire(now) {
+      ALERTS.forEach(a => {
+        if (now.getHours() === a.h && now.getMinutes() === a.m) {
+          const key = today + '_' + a.h + '_' + a.m;
+          if (localStorage.getItem('yiban-alert-fired') === key) return;
+          localStorage.setItem('yiban-alert-fired', key);
+          if (Notification.permission === 'granted') {
+            try { new Notification('一年级工作台', { body: a.t, icon: './assets/icons/icon-192.png' }); } catch (e) { /* iOS */ }
+          }
+          window.appShowToast(a.t);
+        }
+      });
+    }
+    function loop() {
+      maybeFire(new Date());
+      setTimeout(loop, 30000);
+    }
+    loop();
+  })();
+
+  // ============ G6 同步冲突可视化 ============
+  // 当远端 updatedAt 更新但本地因为上次 sync.js bug 更新了 updatedAt 造成混淆时，强制做一次深度 diff 并提示
+  function depthDiff(a, b, path, out, max) {
+    if (out.length > max) return;
+    if (a === b) return;
+    if (typeof a !== typeof b) { out.push({ path: path.join('.'), a: typeof a, b: typeof b }); return; }
+    if (a === null || b === null || typeof a !== 'object') { out.push({ path: path.join('.'), a: a, b: b }); return; }
+    if (Array.isArray(a) !== Array.isArray(b)) { out.push({ path: path.join('.'), a: Array.isArray(a) ? 'array' : typeof a, b: Array.isArray(b) ? 'array' : typeof b }); return; }
+    if (Array.isArray(a)) {
+      if (a.length !== b.length) out.push({ path: path.join('.length'), a: a.length, b: b.length });
+      const m = Math.min(a.length, b.length);
+      for (let i = 0; i < m && out.length < max; i++) depthDiff(a[i], b[i], path.concat(String(i)), out, max);
+      return;
+    }
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+    for (const k of keys) {
+      if (out.length > max) break;
+      depthDiff(a[k], b[k], path.concat(k), out, max);
+    }
+  }
+  window._depthDiff = depthDiff;
+
+  // 家长模式条：在侧边栏底部渲染
+  (function () {
+    const m = window.Parent && window.Parent.uiBar ? window.Parent.uiBar() : '';
+    if (!m) return;
+    const host = document.createElement('div');
+    host.id = 'parentBar';
+    host.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:50';
+    host.innerHTML = m;
+    document.body.appendChild(host);
+    host.querySelectorAll('[data-mode-to]').forEach(b => b.addEventListener('click', () => {
+      const t = b.dataset.modeTo;
+      if (t === 'parent') window.Parent.askPin();
+      else window.Parent.setMode('child');
+      host.innerHTML = window.Parent.uiBar();
+    }));
+  })();
 }
 
 document.addEventListener('DOMContentLoaded', init);
