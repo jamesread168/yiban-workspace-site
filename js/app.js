@@ -1650,10 +1650,10 @@ function init() {
       if (!window.Parent || !window.Parent.openReport) return;
 
       const bar = document.createElement('div');
-      bar.style.cssText = 'position:fixed;left:10px;right:10px;top:10px;z-index:9996;' +
-        'background:linear-gradient(135deg,#A5D8FF,#FFE066);color:#1B4F7A;border-radius:14px;' +
-        'padding:12px 14px;font-size:13px;display:flex;align-items:center;gap:10px;' +
-        'box-shadow:0 6px 20px rgba(0,0,0,.18)';
+      // 流内横幅（插在内容区最上方）：不用 fixed，避免遮挡顶部栏（手机端曾盖住保存/星星）
+      bar.style.cssText = 'background:linear-gradient(135deg,#A5D8FF,#FFE066);color:#1B4F7A;' +
+        'border-radius:14px;padding:12px 14px;font-size:13px;display:flex;align-items:center;' +
+        'gap:10px;margin-bottom:14px;box-shadow:0 6px 20px rgba(0,0,0,.18)';
       bar.innerHTML =
         '<span style="font-size:22px">📋</span>' +
         '<span style="flex:1;line-height:1.5;font-weight:700">本周成长报告已生成，' +
@@ -1662,7 +1662,9 @@ function init() {
         'background:#fff;color:#1B4F7A;font-weight:800;cursor:pointer">查看</button>' +
         '<button id="wkCloseBtn" style="background:rgba(0,0,0,.1);border-radius:50%;' +
         'width:26px;height:26px;cursor:pointer">×</button>';
-      document.body.appendChild(bar);
+      const contentEl = $('#content');
+      if (contentEl && contentEl.firstChild) contentEl.insertBefore(bar, contentEl.firstChild);
+      else document.body.appendChild(bar);
 
       function seen() { try { localStorage.setItem(key, '1'); } catch (e) {} }
       bar.querySelector('#wkViewBtn').addEventListener('click', function () {
@@ -1790,6 +1792,8 @@ function init() {
     host.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:50';
     host.innerHTML = m;
     document.body.appendChild(host);
+    // 底部留白，避免悬浮按钮遮挡最后一个卡片
+    document.body.style.paddingBottom = '56px';
     host.querySelectorAll('[data-mode-to]').forEach(b => b.addEventListener('click', () => {
       const t = b.dataset.modeTo;
       if (t === 'parent') window.Parent.askPin();
