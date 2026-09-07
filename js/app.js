@@ -1629,6 +1629,16 @@ function init() {
   render();          // 先渲染页面：次要请求（天气等）失败也不该阻塞界面
   fetchWeather();
 
+  // 家长密码迁移：老版本把 PIN 只存在本机 localStorage，其它设备读不到，
+  // 会误判成「首次使用」弹设置界面。这里把它搬进同步数据，让手机也能直接输密码。
+  try {
+    const localPin = localStorage.getItem('_parentPin');
+    if (localPin && !state.data.parentPin) {
+      state.data.parentPin = localPin;
+      window.SyncAPI.saveData(state.data);
+    }
+  } catch (e) {}
+
   // 护眼 20-20-20 计时（家长中心可关闭）
   if (window.startEyeCare) window.startEyeCare();
 
