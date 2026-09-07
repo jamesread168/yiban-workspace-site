@@ -234,6 +234,24 @@ function awardStars(n, silent) {
   }
 }
 
+// 同一项「每天只奖励一次」——堵住「打卡 → 取消 → 再打卡」反复刷星星的漏洞。
+// 记录存在 data.awarded[日期][key]，跨天自动重置；取消打卡不退还也不再发。
+function awardOnce(key, n, silent) {
+  const d = ensureData();
+  const k = window.todayKey();
+  if (!d.awarded || typeof d.awarded !== 'object') d.awarded = {};
+  if (!d.awarded[k] || typeof d.awarded[k] !== 'object') d.awarded[k] = {};
+  if (d.awarded[k][key]) return false;      // 今天这项已经奖励过了
+  d.awarded[k][key] = Date.now();
+  awardStars(n, silent);
+  // 只保留最近 7 天的记录，避免数据无限增长
+  try {
+    const keys = Object.keys(d.awarded).sort();
+    while (keys.length > 7) { delete d.awarded[keys.shift()]; }
+  } catch (e) {}
+  return true;
+}
+
 // 临门一脚：告诉孩子离最近可兑换的奖励还差几颗星
 function nearestRewardTip(before, after) {
   try {
@@ -332,7 +350,7 @@ function bindViewEvents() {
       else {
         h[id] = Date.now();
         row.classList.add('checked'); row.querySelector('.habit-check').textContent = '✓';
-        awardStars(1);
+        if (!awardOnce('habit:' + id, 1)) showToast('这项今天已经拿过星星啦～');
       }
       window.SyncAPI.saveData(state.data); markDirty();
       updateSidebar();
@@ -361,7 +379,10 @@ function bindViewEvents() {
       if (!t) return;
       t.done = !t.done;
       window.SyncAPI.saveData(state.data); markDirty();
-      if (t.done) { awardStars(1); confetti(); }
+      if (t.done) {
+        if (awardOnce('todo:' + t.id, 1)) confetti();
+        else showToast('这项已经拿过星星啦～');
+      }
       render();
     });
   });
@@ -1563,6 +1584,7 @@ function init() {
   window.appConfetti = confetti;
   window.appRender = render;
   window.appAwardStars = awardStars;
+  window.appAwardOnce = awardOnce;      // 同类每天只奖励一次（防刷星）
   window.appMarkDirty = markDirty;
   window.appSaveAll = saveAll;   // 资料上传/删除后立即保存+推送（materials.js 用）
 
