@@ -710,6 +710,12 @@ function bindViewEvents() {
       showToast('数据已导出 📤');
     });
   }
+  // 星星校准（家长权限，儿童模式点会先要求输密码）
+  if ($('#starCalibrateBtn')) {
+    $('#starCalibrateBtn').addEventListener('click', () => {
+      if (window.Parent && window.Parent.openStarCalibrate) window.Parent.openStarCalibrate();
+    });
+  }
   if ($('#importData') && $('#importDataFile')) {
     const fileInput = $('#importDataFile');
     $('#importData').addEventListener('click', () => fileInput.click());
