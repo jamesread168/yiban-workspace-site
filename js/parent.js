@@ -27,11 +27,26 @@
     try { if (window.appRender) window.appRender(); } catch (e) { toast('切换模式失败：' + e.message); }
   }
 
+  // 密码存同步数据（data.parentPin）+ 本地各一份：
+  // 只存 localStorage 的话，电脑上设的密码手机读不到，手机会误判为「首次设置」。
+  const PIN_DATA_KEY = 'parentPin';
   function ensurePin() {
-    let pin = localStorage.getItem(PIN_KEY);
-    return pin;
+    try {
+      const d = st();
+      if (d && d[PIN_DATA_KEY]) return d[PIN_DATA_KEY];   // 优先用同步过来的密码
+    } catch (e) {}
+    return localStorage.getItem(PIN_KEY);                  // 回退到本机
   }
-  function setPin(pin) { localStorage.setItem(PIN_KEY, pin); }
+  function setPin(pin) {
+    try { localStorage.setItem(PIN_KEY, pin); } catch (e) {}
+    try {
+      const d = st();
+      if (d) {
+        d[PIN_DATA_KEY] = pin;
+        window.SyncAPI.saveData(d);                        // 随数据同步到其它设备
+      }
+    } catch (e) {}
+  }
 
   function askPin(action, onOk) {
     const pin = ensurePin();
