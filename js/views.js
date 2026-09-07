@@ -726,6 +726,9 @@
               <div class="reward-name">${esc(r.name)}</div>
               <div class="reward-cost">⭐ ${r.cost}</div>
               ${cust ? '<span class="reward-tag tag-self">自定义</span>' : (r.type === 'experience' ? '<span class="reward-tag tag-exp">体验型</span>' : '<span class="reward-tag tag-mat">实物</span>')}
+              <div style="margin-top:6px;height:6px;border-radius:999px;background:#F0F0F5;overflow:hidden">
+                <span style="display:block;height:100%;border-radius:999px;width:${Math.min(100, Math.round(stars / r.cost * 100))}%;background:linear-gradient(90deg,#FFD86B,#FFB570)"></span>
+              </div>
               ${ok ? '<div class="view-sub" style="color:var(--green-deep);font-weight:700">点击申请</div>' : '<div class="view-sub">还差 ' + (r.cost - stars) + ' ⭐</div>'}
             </div>`;
           }).join('')}
