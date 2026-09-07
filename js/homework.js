@@ -59,7 +59,19 @@
     return d.homeworkTpl.length ? d.homeworkTpl : DEFAULT_TPL;
   }
 
+  // 权限：只有家长模式能「布置 / 删除」作业；儿童模式只能打卡
+  function isParentMode() {
+    return !!(window.Parent && window.Parent.currentMode && window.Parent.currentMode() === 'parent');
+  }
+  function requireParent() {
+    if (isParentMode()) return true;
+    toast('作业由家长布置哦 🔒');
+    if (window.Parent && window.Parent.askPin) window.Parent.askPin('mode');
+    return false;
+  }
+
   function add(subject, text, minutes) {
+    if (!requireParent()) return false;
     const t = String(text || '').trim();
     if (!t) return false;
     const k = todayKey();
@@ -99,6 +111,7 @@
   }
 
   function remove(id) {
+    if (!requireParent()) return;
     const k = todayKey();
     const d = ensure();
     d.homework[k] = listOf(k).filter(x => x.id !== id);
@@ -133,6 +146,7 @@
     const { done, total, mins } = statOf(k);
     const pct = total ? Math.round(done / total * 100) : 0;
     const week = weekStat();
+    const canEdit = isParentMode();   // 家长可布置/删除，孩子只能打卡
 
     const groups = SUBJECTS.map(s => ({
       s,
@@ -161,13 +175,15 @@
         <div style="margin-top:10px;height:8px;border-radius:999px;background:rgba(255,255,255,.35);overflow:hidden">
           <span style="display:block;height:100%;width:${pct}%;background:#fff;border-radius:999px"></span>
         </div>
-        ${total === 0 ? '<div class="view-sub" style="color:#fff;margin-top:8px">还没有作业，从下面添加吧～</div>'
+        ${total === 0
+          ? `<div class="view-sub" style="color:#fff;margin-top:8px">${canEdit ? '还没有作业，从下面添加吧～' : '今天还没有作业，等家长来布置～'}</div>`
           : (done === total ? '<div class="view-sub" style="color:#fff;margin-top:8px">🎉 全部完成，太棒了！</div>'
             : `<div class="view-sub" style="color:#fff;margin-top:8px">还剩 ${total - done} 项，加油～</div>`)}
       </div>
 
       <div class="card">
-        <div class="card-title">➕ 添加作业</div>
+        <div class="card-title">➕ 布置作业${canEdit ? '' : '（家长）'}</div>
+        ${canEdit ? `
         <div class="input-row" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">
           <select id="hwSubject" style="flex:0 0 110px;padding:10px;border-radius:10px;background:#fff;font-size:14px;border:2px solid #EEE">
             ${SUBJECTS.map(s => `<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('')}
@@ -181,7 +197,8 @@
         <div style="font-size:12px;color:var(--text-light);margin-bottom:6px">常用作业（点一下直接添加）：</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           ${templates().map((t, i) => `<button class="btn-sm btn-gray" data-hwtpl="${i}">${subOf(t.subject).emoji} ${esc(t.text)}</button>`).join('')}
-        </div>
+        </div>` : `
+        <div class="view-sub">作业由爸爸妈妈布置。你完成一项，就点一下前面的圆圈打勾，每完成一项 +1 ⭐，全部完成还有额外奖励！</div>`}
       </div>
 
       ${groups.length ? groups.map(g => `
@@ -197,7 +214,7 @@
                 <span class="todo-text">${esc(it.text)}
                   <span style="font-size:12px;color:var(--text-light)"> · ${it.minutes} 分钟${it.done && it.doneAt ? ' · ' + new Date(it.doneAt).toTimeString().slice(0, 5) + ' 完成' : ''}</span>
                 </span>
-                <button class="todo-del" data-hw-del="${it.id}">×</button>
+                ${canEdit ? `<button class="todo-del" data-hw-del="${it.id}">×</button>` : ''}
               </li>`).join('')}
           </ul>
         </div>`).join('') : ''}
