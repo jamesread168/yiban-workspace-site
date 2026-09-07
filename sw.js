@@ -3,29 +3,30 @@
  * 策略：stale-while-revalidate —— 优先秒开缓存，后台静默更新
  * 效果：手机加载过一次后，即使 5G 流量下被拦/无网络，也能正常打开工作台
  */
-const CACHE_NAME = 'yiban-workspace-v22';
+const CACHE_NAME = 'yiban-workspace-v23';
 const CORE_FILES = [
   './',
-  './index.html?v=22',
-  './manifest.json?v=22',
-  './css/style.css?v=22',
-  './js/data.js?v=22',
-  './js/sync.js?v=22',
-  './js/schedule.js?v=22',
-  './js/schedule-edit.js?v=22',
-  './js/study.js?v=22',
-  './js/views.js?v=22',
-  './js/cloud-sync.js?v=22',
-  './js/materials.js?v=22',
-  './js/exam.js?v=22',
-  './js/review.js?v=22',
-  './js/routine.js?v=22',
-  './js/parent.js?v=22',
-  './js/feedback.js?v=22',
-  './js/lib/hanzi-writer.min.js?v=22',
-  './js/app.js?v=22',
-  './assets/icons/icon-192.png?v=22',
-  './assets/icons/icon-512.png?v=22',
+  './index.html?v=23',
+  './manifest.json?v=23',
+  './css/style.css?v=23',
+  './js/data.js?v=23',
+  './js/sync.js?v=23',
+  './js/schedule.js?v=23',
+  './js/schedule-edit.js?v=23',
+  './js/study.js?v=23',
+  './js/zi-stroke-data.js?v=23',
+  './js/views.js?v=23',
+  './js/cloud-sync.js?v=23',
+  './js/materials.js?v=23',
+  './js/exam.js?v=23',
+  './js/review.js?v=23',
+  './js/routine.js?v=23',
+  './js/parent.js?v=23',
+  './js/feedback.js?v=23',
+  './js/lib/hanzi-writer.min.js?v=23',
+  './js/app.js?v=23',
+  './assets/icons/icon-192.png?v=23',
+  './assets/icons/icon-512.png?v=23',
 ];
 
 // 安装：预缓存核心文件
