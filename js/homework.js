@@ -200,7 +200,10 @@
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           ${templates().map((t, i) => `<button class="btn-sm btn-gray" data-hwtpl="${i}">${subOf(t.subject).emoji} ${esc(t.text)}</button>`).join('')}
         </div>` : `
-        <div class="view-sub">作业由爸爸妈妈布置。你完成一项，就点一下前面的圆圈打勾，每完成一项 +1 ⭐，全部完成还有额外奖励！</div>`}
+        <div class="view-sub">作业由爸爸妈妈布置。你完成一项，就点一下前面的圆圈打勾，每完成一项 +1 ⭐，全部完成还有额外奖励！</div>
+        <div style="margin-top:10px">
+          <button class="btn-sm btn-purple" data-mode-to="parent">👨‍👩‍👧 我是家长，去布置作业</button>
+        </div>`}
       </div>
 
       ${groups.length ? groups.map(g => `
@@ -249,6 +252,10 @@
 
   // ============ 事件绑定（由 app.js 的 bindViewEvents 统一调用）============
   function bind(root) {
+    // 模式切换按钮（儿童模式下的「我是家长，去布置作业」）
+    if (window.Parent && window.Parent.bindBar) {
+      try { window.Parent.bindBar(root); } catch (e) {}
+    }
     root.querySelectorAll('[data-hw-toggle]').forEach(el => {
       el.addEventListener('click', (e) => { e.stopPropagation(); toggle(el.dataset.hwToggle); });
     });
