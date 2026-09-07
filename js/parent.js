@@ -452,6 +452,22 @@
             <div class="pc-tile-emoji">🔑</div><div class="pc-tile-name">修改密码</div><div class="pc-tile-desc">4 位 PIN</div>
           </button>
         </div>
+        <div class="card" style="margin-top:12px">
+          <div class="card-title">🔔 反馈设置</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer">
+              <input type="checkbox" id="fbSoundToggle" ${(window.Feedback && window.Feedback.muted()) ? 'checked' : ''} style="width:18px;height:18px">
+              <span>🔇 关闭提示音效和震动</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer">
+              <input type="checkbox" id="fbEyeToggle" ${(window.EyeCare && window.EyeCare.off()) ? 'checked' : ''} style="width:18px;height:18px">
+              <span>🚫 关闭「护眼 20-20-20」提醒</span>
+            </label>
+            <div style="font-size:12px;color:#7A7A8C;line-height:1.6">
+              护眼提醒：每用眼 20 分钟提示远眺 20 秒${window.EyeCare && !window.EyeCare.off() ? '（约 ' + window.EyeCare.remainMinutes() + ' 分钟后）' : '（已关闭）'}
+            </div>
+          </div>
+        </div>
         ${w ? `<div class="card" style="margin-top:12px">${w}</div>` : ''}
       </div>
       <div class="act-foot"><button class="btn-sm btn-gray" data-back>关闭</button></div>
@@ -471,6 +487,16 @@
       else if (a === 'trash') { openTrash(); }
       else if (a === 'pin') { window.closeModal(); askPin('repin', () => setPin('')); }
     }));
+
+    // 反馈设置：静音 / 护眼开关
+    const sndT = m.querySelector('#fbSoundToggle');
+    if (sndT) sndT.addEventListener('change', () => {
+      if (window.Feedback) window.Feedback.setMuted(sndT.checked);
+    });
+    const eyeT = m.querySelector('#fbEyeToggle');
+    if (eyeT) eyeT.addEventListener('change', () => {
+      if (window.EyeCare) { window.EyeCare.setOff(eyeT.checked); if (!eyeT.checked) window.EyeCare.reset(); }
+    });
   }
 
   window.Parent = {
