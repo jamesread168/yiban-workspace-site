@@ -440,6 +440,7 @@
       <div style="padding:14px 16px;border-bottom:1px solid #eee;background:linear-gradient(135deg,#C9B6FF,#A5D8FF)">
         <div style="font-size:16px;font-weight:800;color:#4A3A7A">👨‍👩‍👧 家长中心</div>
         <div style="font-size:12px;color:#6B5A9A;margin-top:3px">${isParent ? '当前：家长模式 · 可修改数据' : '当前：儿童模式 · 切换后可修改'}</div>
+        <div style="font-size:11px;color:#8B7AB0;margin-top:3px;line-height:1.5">💡 模式按<b>设备独立</b>：在哪台设备布置作业，就在哪台切换家长模式。这样孩子的手机不会自动获得修改权限。</div>
       </div>
       <div style="padding:14px 16px;max-height:64vh;overflow-y:auto">
         <div class="pc-grid">
