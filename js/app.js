@@ -276,6 +276,9 @@ function updateSidebar() {
   setBadge('#navBadgeStudy', studyN);
   const habitN = Object.values(d.habits?.[k] || {}).filter(Boolean).length;
   setBadge('#navBadgeHabit', habitN);
+  // 作业：显示今天还没完成的项数
+  const hwUndone = (d.homework?.[k] || []).filter(x => !x.done).length;
+  setBadge('#navBadgeHomework', hwUndone);
 
   $('#topStars').textContent = d.stars?.total || 0;
   $('#sideStreak').textContent = d.streaks?.currentDays || 0;
@@ -297,6 +300,11 @@ function setBadge(sel, n) {
 // ============ 事件绑定 ============
 function bindViewEvents() {
   const content = $('#content');
+
+  // ---- 作业打卡模块（homework.js）----
+  if (window.Homework && window.Homework.bind) {
+    try { window.Homework.bind(content); } catch (e) {}
+  }
 
   // ---- 导航日切换（课表）----
   content.querySelectorAll('.day-tab').forEach(b => {
@@ -636,6 +644,7 @@ function bindViewEvents() {
         window.Exam.openDrill(list);
       } else if (a === 'openWrongBook' && window.Exam) window.Exam.openWrongBook();
       else if (a === 'openRoutine' && window.Routine) window.Routine.openCenter();
+      else if (a === 'openHomework') switchView('homework');
     });
   });
 
