@@ -259,7 +259,14 @@
       return screen(
         `<span class="ae">📝</span><span class="at">生字表 · 会写</span><span class="as">${done}/${total}</span>`,
         `<div class="alert alert-info" style="margin-bottom:14px"><span class="alert-emoji">💡</span>
-          <div>点击汉字标记为「已掌握」。对应教材写字表（${total} 字）</div></div>
+          <div>
+            <div>点击汉字看<b>笔顺演示</b>、标记「已掌握」。对应教材写字表（${total} 字）</div>
+            <div style="margin-top:8px;font-size:12px">已会写 <b>${done}</b>/${total} 字 ·
+              课标要求一年级<b>认识约 400 字、会写 100 字</b></div>
+            <div style="margin-top:6px;height:7px;border-radius:999px;background:#F0F0F5;overflow:hidden">
+              <span style="display:block;height:100%;width:${Math.min(100, Math.round(done / total * 100))}%;background:linear-gradient(90deg,#FFD86B,#FFB570)"></span>
+            </div>
+          </div></div>
         ${units.map(u => `<div class="zi-unit">
           <div class="zi-unit-title">${u.unit}（${u.zi.filter(z => mastered[z]).length}/${u.zi.length}）</div>
           <div class="zi-grid">${u.zi.map(z => `<div class="zi-cell ${mastered[z] ? 'mastered' : ''}" data-zi="${z}">${z}</div>`).join('')}</div>
@@ -269,16 +276,7 @@
     }
     function bind() {
       modalEl().querySelectorAll('[data-zi]').forEach(c => {
-        c.addEventListener('click', () => {
-          const z = c.dataset.zi;
-          if (mastered[z]) { delete mastered[z]; c.classList.remove('mastered'); }
-          else {
-            mastered[z] = Date.now(); c.classList.add('mastered');
-            speak(z, 'zh-CN', 'char');
-          }
-          window.SyncAPI.saveData(st());
-          updateHead();
-        });
+        c.addEventListener('click', () => openZiDetail(c.dataset.zi, c));
       });
       modalEl().querySelector('[data-done]').addEventListener('click', () => {
         const ok = award(subId, 'zi', 2);
@@ -287,6 +285,82 @@
       });
       bindBack(subId);
     }
+
+    // 生字详情：笔顺演示 / 临摹 / 朗读 / 标记掌握
+    function openZiDetail(z, cell) {
+      window.openModal(
+        `<div style="padding:16px 14px;text-align:center">
+          <div style="font-size:44px;font-weight:800;color:var(--pink-deep)">${z}</div>
+          <div style="font-size:13px;color:#7A7A8C;margin:4px 0 10px">跟着笔顺写一写</div>
+          <div id="hzBox" style="width:210px;height:210px;margin:0 auto;background:#fff;border:2px solid #FFD9EA;border-radius:12px"></div>
+          <div id="hzTip" style="font-size:12px;color:#7A7A8C;margin-top:8px">笔顺加载中…</div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap">
+            <button class="btn-sm btn-yellow" id="hzPlay">▶️ 演示笔顺</button>
+            <button class="btn-sm btn-gray" id="hzQuiz">✍️ 我来写</button>
+            <button class="btn-sm btn-pink" id="hzSpeak">🔊 读音</button>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+            <button class="btn-sm ${mastered[z] ? 'btn-green' : 'btn-gray'}" id="hzMaster">${mastered[z] ? '✅ 已掌握（点击取消）' : '⭐ 标记为已掌握'}</button>
+          </div>
+          <button class="btn-sm btn-gray" data-back style="margin-top:12px">返回生字表</button>
+        </div>`
+      );
+
+      const tip = modalEl().querySelector('#hzTip');
+      let writer = null;
+
+      function initWriter(data) {
+        try {
+          if (typeof HanziWriter === 'undefined') { tip.textContent = '笔顺组件未加载'; return; }
+          writer = HanziWriter.create('hzBox', data, {
+            width: 210, height: 210, padding: 8,
+            showOutline: true, showCharacter: true,
+            strokeColor: '#E4537F', outlineColor: '#DDDDDD',
+            radicalColor: '#FF9EC4', drawingColor: '#E4537F',
+            strokeAnimationSpeed: 1, delayBetweenStrokes: 250,
+            onComplete: function () {
+              tip.textContent = '✅ 写完啦，很棒！';
+              if (window.Feedback) window.Feedback.done();
+            },
+          });
+          tip.textContent = '点「演示笔顺」看怎么写';
+        } catch (e) {
+          tip.textContent = '笔顺加载失败，可先跟读和书空';
+        }
+      }
+
+      // 字形数据：在线加载；离线时优雅降级，不影响其它功能
+      fetch('https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/' + encodeURIComponent(z) + '.json')
+        .then(function (r) { return r.json(); })
+        .then(initWriter)
+        .catch(function () {
+          tip.textContent = '笔顺数据需联网加载（当前离线，可先跟读 / 书空）';
+        });
+
+      modalEl().querySelector('#hzPlay').addEventListener('click', function () {
+        if (writer) { writer.animateCharacter(); tip.textContent = '看清楚每一笔的顺序～'; }
+      });
+      modalEl().querySelector('#hzQuiz').addEventListener('click', function () {
+        if (writer) { writer.quiz(); tip.textContent = '试着自己写一写'; }
+      });
+      modalEl().querySelector('#hzSpeak').addEventListener('click', function () {
+        speak(z, 'zh-CN', 'char');
+      });
+      modalEl().querySelector('#hzMaster').addEventListener('click', function () {
+        if (mastered[z]) delete mastered[z];
+        else {
+          mastered[z] = Date.now();
+          if (window.Feedback) window.Feedback.reward();
+        }
+        window.SyncAPI.saveData(st());
+        window.openModal(build()); bind();     // 回列表并刷新进度
+      });
+      const backBtn = modalEl().querySelector('[data-back]');
+      if (backBtn) backBtn.addEventListener('click', function () {
+        window.openModal(build()); bind();
+      });
+    }
+
     function updateHead() {
       const total = D().ZI_XIE.reduce((n, u) => n + u.zi.length, 0);
       const done = Object.keys(mastered).length;
@@ -304,8 +378,13 @@
   };
 
   // 5-6. 加减法（10 / 20 以内）
+  // 数字转中文（听算朗读用）
+  const NUM_CN = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
+    '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
+
   function makeMath(subId, actId, max) {
-    const S = { score: 0, total: 0 };
+    // listen = true 时为「听算模式」：只念题目不显示算式，训练口算能力
+    const S = { score: 0, total: 0, listen: false };
     function gen() {
       const op = Math.random() < 0.5 ? '+' : '-';
       let a, b;
@@ -317,20 +396,45 @@
         const v = Math.max(0, Math.min(max * 2, ans + Math.floor(Math.random() * 7) - 3));
         opts.add(v);
       }
-      return { q: `${a} ${op} ${b} = ?`, ans, opts: shuffle([...opts]) };
+      const speakText = (NUM_CN[a] || a) + (op === '+' ? '，加，' : '，减，') + (NUM_CN[b] || b) + '，等于几';
+      return { q: `${a} ${op} ${b} = ?`, ans, opts: shuffle([...opts]), speakText, a, b, op };
+    }
+    function speakCur() {
+      const cur = window._curMath;
+      if (cur && cur.speakText) speak(cur.speakText, 'zh-CN', 'word');
     }
     function build() {
       const cur = gen();
       S.total++;
       window._curMath = cur;
+      const qHtml = S.listen
+        ? `<div class="math-q" id="listenQ" style="cursor:pointer;font-size:26px">🔊 点我再听一遍</div>
+           <div class="view-sub" style="text-align:center;margin-top:4px">听算式，选出答案</div>`
+        : `<div class="math-q">${cur.q}</div>`;
+      const toggle = `<div style="text-align:center;margin-bottom:10px">
+          <button class="btn-sm ${S.listen ? 'btn-green' : 'btn-gray'}" id="listenToggle">${S.listen ? '👂 听算模式' : '👀 看算模式'}</button>
+        </div>`;
       return screen(
         `<span class="ae">${actId === 'math20' ? '🔟' : '➕'}</span><span class="at">${actId === 'math20' ? '20以内运算' : '加减法'}</span><span class="as">${S.score}/${S.total - 1}</span>`,
-        `<div class="math-q">${cur.q}</div>
-         <div class="opt-grid">${cur.opts.map(o => `<button class="opt-btn math-opt" data-v="${o}">${o}</button>`).join('')}</div>`,
+        toggle + qHtml +
+        `<div class="opt-grid">${cur.opts.map(o => `<button class="opt-btn math-opt" data-v="${o}">${o}</button>`).join('')}</div>`,
         '<button class="btn-sm btn-gray" data-back>返回</button>'
       );
     }
     function bind() {
+      // 听算 / 看算 切换（切换本身算一次点击，可触发语音解锁）
+      const lt = modalEl().querySelector('#listenToggle');
+      if (lt) {
+        lt.addEventListener('click', () => {
+          S.listen = !S.listen;
+          S.total--;                       // 抵消 build() 里的 +1，切换模式不消耗题数
+          window.openModal(build()); bind();
+          if (S.listen) setTimeout(speakCur, 120);
+        });
+      }
+      const lq = modalEl().querySelector('#listenQ');
+      if (lq) lq.addEventListener('click', speakCur);
+
       modalEl().querySelectorAll('[data-v]').forEach(b => {
         b.addEventListener('click', () => {
           const v = parseInt(b.dataset.v, 10);
@@ -353,7 +457,10 @@
               if (window.Exam) window.Exam.finish(subId, actId, S.total, S.score);
               award(subId, actId, 2); openSubject(subId);
             }
-            else { window.openModal(build()); bind(); }
+            else {
+              window.openModal(build()); bind();
+              if (S.listen) setTimeout(speakCur, 150);   // 听算：下一题自动朗读
+            }
           }, right ? 650 : 2100);
         });
       });
