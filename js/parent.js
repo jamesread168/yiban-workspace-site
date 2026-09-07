@@ -467,6 +467,9 @@
           <button class="pc-tile" data-pc-act="pin">
             <div class="pc-tile-emoji">🔑</div><div class="pc-tile-name">修改密码</div><div class="pc-tile-desc">4 位 PIN</div>
           </button>
+          <button class="pc-tile" data-pc-act="star">
+            <div class="pc-tile-emoji">⭐</div><div class="pc-tile-name">校准星星</div><div class="pc-tile-desc">当前 ${(st().stars && st().stars.total) || 0} 颗 · 可清零</div>
+          </button>
         </div>
         <div class="card" style="margin-top:12px">
           <div class="card-title">🔔 反馈设置</div>
@@ -502,6 +505,7 @@
       else if (a === 'archive') { window.closeModal(); exportArchive(); }
       else if (a === 'trash') { openTrash(); }
       else if (a === 'pin') { window.closeModal(); askPin('repin', () => setPin('')); }
+      else if (a === 'star') { openStarCalibrate(); }
     }));
 
     // 反馈设置：静音 / 护眼开关
@@ -515,9 +519,49 @@
     });
   }
 
+  // ============ 星星校准（家长专用）============
+  function openStarCalibrate() {
+    const d = st();
+    const cur = (d.stars && d.stars.total) || 0;
+    window.openModal(`
+      <div style="padding:16px 16px 4px">
+        <div style="font-size:16px;font-weight:800;color:#4A3A7A">⭐ 校准星星</div>
+        <div class="view-sub" style="margin:6px 0 12px">当前共 <b>${cur}</b> 颗。可清零重来，或改成指定数量。</div>
+        <div class="input-row">
+          <input type="number" id="starVal" value="${cur}" min="0" inputmode="numeric" style="flex:1;padding:10px;border-radius:10px;border:2px solid #EEE;font-size:15px" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn-sm btn-gray" id="starZero">清零重来</button>
+          <button class="btn-sm btn-green" id="starSave">保存</button>
+        </div>
+        <div class="view-sub" style="margin-top:10px">清零只影响星星数量，打卡记录、作业、习惯数据都会保留。清零后今天起重新正常积累。</div>
+      </div>
+      <div class="act-foot"><button class="btn-sm btn-gray" data-back>取消</button></div>
+    `);
+    const m = document.querySelector('#modalLayer');
+    const apply = (v) => {
+      const n = Math.max(0, parseInt(v, 10) || 0);
+      const dd = st();
+      if (!dd.stars) dd.stars = { total: 0, today: { date: '', count: 0 } };
+      dd.stars.total = n;
+      dd.stars.today = { date: window.todayKey(), count: 0 };
+      dd.starLog = {};
+      dd.awarded = {};                    // 清空今日奖励记录，清零后可重新积累
+      window.SyncAPI.saveData(dd);
+      window.closeModal();
+      toast('星星已设为 ' + n + ' ⭐');
+      if (window.appRender) window.appRender();
+    };
+    m.querySelector('[data-back]').addEventListener('click', () => window.closeModal());
+    m.querySelector('#starZero').addEventListener('click', () => {
+      if (confirm('确定把星星清零吗？打卡、作业等数据会保留。')) apply(0);
+    });
+    m.querySelector('#starSave').addEventListener('click', () => apply(m.querySelector('#starVal').value));
+  }
+
   window.Parent = {
     setMode, currentMode, askPin, ensurePin, setPin, uiBar, bindBar,
-    push, trashList, openTrash, restoreItem,
+    push, trashList, openTrash, restoreItem, openStarCalibrate,
     openReport, weeklySummary, monthlySummary, exportArchive,
     openNotice, openParentCenter,
   };
