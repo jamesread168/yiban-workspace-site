@@ -168,6 +168,12 @@
       ${(() => {
         const planItems = [];
         if (todoN) planItems.push({ emoji: '🎒', text: '完成今日 ' + todoN + ' 个小任务', act: 'openTodos' });
+        if (window.Homework && window.Homework.statOf) {
+          const hw = window.Homework.statOf(todayKey());
+          if (hw.total && hw.done < hw.total) {
+            planItems.push({ emoji: '📝', text: '还有 ' + (hw.total - hw.done) + ' 项作业待完成', act: 'openHomework' });
+          }
+        }
         if (dueRev) planItems.push({ emoji: '🧠', text: '复习 ' + dueRev + ' 个已学内容', act: 'openReview' });
         if (window.Exam) {
           const d = (state && state.data && state.data.wrongBook) || [];
