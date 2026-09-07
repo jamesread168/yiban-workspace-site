@@ -98,13 +98,22 @@
     save();
     if (it.done) {
       if (window.Feedback) window.Feedback.done();
-      window.appAwardStars(1);              // 完成一项 +1 星
+      // 同一项作业每天只发一次星，避免「打卡→取消→再打卡」刷星星
+      const got = window.appAwardOnce
+        ? window.appAwardOnce('homework:' + it.id, 1)
+        : (window.appAwardStars(1), true);
+      if (!got) toast('这项今天已经拿过星星啦～');
+
       const { done, total } = statOf(k);
-      if (total > 0 && done === total) {    // 全部完成额外奖励
-        window.appAwardStars(2);
-        toast('🎉 今天的作业全部完成啦！+2⭐');
-        if (window.Feedback) window.Feedback.levelUp();
-        if (window.appConfetti) window.appConfetti();
+      if (total > 0 && done === total) {    // 全部完成额外奖励（每天只发一次）
+        const gotAll = window.appAwardOnce
+          ? window.appAwardOnce('homework:allDone', 2)
+          : false;
+        if (gotAll) {
+          toast('🎉 今天的作业全部完成啦！+2⭐');
+          if (window.Feedback) window.Feedback.levelUp();
+          if (window.appConfetti) window.appConfetti();
+        }
       }
     }
     render();
