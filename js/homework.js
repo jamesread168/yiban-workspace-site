@@ -184,14 +184,16 @@
       <div class="card">
         <div class="card-title">➕ 布置作业${canEdit ? '' : '（家长）'}</div>
         ${canEdit ? `
-        <div class="input-row" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <select id="hwSubject" style="flex:0 0 110px;padding:10px;border-radius:10px;background:#fff;font-size:14px;border:2px solid #EEE">
+        <div class="input-row" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
+          <select id="hwSubject" style="flex:1 1 120px;padding:10px;border-radius:10px;background:#fff;font-size:14px;border:2px solid #EEE">
             ${SUBJECTS.map(s => `<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('')}
           </select>
-          <input type="text" id="hwText" placeholder="作业内容，如：朗读第3课" style="flex:1;min-width:140px;padding:10px;border-radius:10px;border:2px solid #EEE;font-size:14px" />
-          <select id="hwMinutes" style="flex:0 0 92px;padding:10px;border-radius:10px;background:#fff;font-size:14px;border:2px solid #EEE">
+          <select id="hwMinutes" style="flex:0 0 104px;padding:10px;border-radius:10px;background:#fff;font-size:14px;border:2px solid #EEE">
             ${[5, 10, 15, 20, 30, 45, 60].map(m => `<option value="${m}"${m === 10 ? ' selected' : ''}>${m} 分钟</option>`).join('')}
           </select>
+        </div>
+        <div class="input-row" style="margin-bottom:10px;gap:8px">
+          <input type="text" id="hwText" placeholder="作业内容，如：朗读第3课" style="flex:1;min-width:120px;padding:10px;border-radius:10px;border:2px solid #EEE;font-size:14px" />
           <button class="btn-sm btn-green" id="hwAddBtn">添加</button>
         </div>
         <div style="font-size:12px;color:var(--text-light);margin-bottom:6px">常用作业（点一下直接添加）：</div>
