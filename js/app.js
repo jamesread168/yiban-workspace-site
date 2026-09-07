@@ -221,11 +221,32 @@ function awardStars(n, silent) {
   const d = state.data;
   const k = window.todayKey();
   if (d.stars.today.date !== k) d.stars.today = { date: k, count: 0 };
+  const before = d.stars.total;
   d.stars.total += n;
   d.stars.today.count += n;
   d.starLog[k] = (d.starLog[k] || 0) + n;
   window.SyncAPI.saveData(d);
-  if (!silent) { showToast(`+${n} ⭐ 太棒了！`); confetti(); }
+  if (!silent) {
+    if (window.Feedback) window.Feedback.reward();      // 音效 + 震动
+    const tip = nearestRewardTip(before, d.stars.total); // 临门一脚激励
+    showToast(`+${n} ⭐ 太棒了！` + (tip ? ' ' + tip : ''));
+    confetti();
+  }
+}
+
+// 临门一脚：告诉孩子离最近可兑换的奖励还差几颗星
+function nearestRewardTip(before, after) {
+  try {
+    const list = (state.data.rewards && state.data.rewards.length)
+      ? state.data.rewards
+      : (window.AppData && window.AppData.REWARD_TEMPLATES) || [];
+    if (!list.length) return '';
+    const near = list.filter(r => r.cost > before).sort((a, b) => a.cost - b.cost)[0];
+    if (!near) return '';
+    if (after >= near.cost) return `🎉 可以兑换「${near.name}」啦！`;
+    const gap = near.cost - after;
+    return gap <= 10 ? `再攒 ${gap} ⭐ 就能换「${near.name}」` : '';
+  } catch (e) { return ''; }
 }
 
 // ============ 视图路由 ============
@@ -1489,6 +1510,14 @@ function updateClock() {
 
 function fetchWeather() {
   const url = 'https://api.open-meteo.com/v1/forecast?latitude=22.5&longitude=114.0&current=temperature_2m,weather_code&timezone=Asia%2FShanghai';
+  const fallback = () => {
+    const t = $('#weatherTemp'), e = $('#weatherEmoji');
+    if (t) t.textContent = '26°C';
+    if (e) e.textContent = '⛅';
+  };
+  // 环境无 fetch（老浏览器 / 特殊内核）时直接降级，绝不让天气请求阻断页面初始化
+  if (typeof fetch !== 'function') { fallback(); return; }
+  try {
   fetch(url).then(r => r.json()).then(j => {
     const c = j.current;
     if (!c) return;
@@ -1497,7 +1526,8 @@ function fetchWeather() {
     $('#weatherEmoji').textContent =
       code === 0 ? '☀️' : code <= 3 ? '⛅' : code <= 48 ? '🌫️' : code <= 57 ? '🌦️' :
       code <= 67 ? '🌧️' : code <= 77 ? '🌨️' : code <= 82 ? '⛈️' : code <= 99 ? '🌩️' : '🌈';
-  }).catch(() => { $('#weatherTemp').textContent = '26°C'; $('#weatherEmoji').textContent = '⛅'; });
+  }).catch(fallback);
+  } catch (e) { fallback(); }
 }
 
 // ============ 弹窗工具（供 study.js 使用）============
@@ -1587,8 +1617,53 @@ function init() {
   setInterval(updateClock, 1000);
   setInterval(() => { if (state.view === 'dashboard') render(); }, 60000);
 
+  render();          // 先渲染页面：次要请求（天气等）失败也不该阻塞界面
   fetchWeather();
-  render();
+
+  // 护眼 20-20-20 计时（家长中心可关闭）
+  if (window.startEyeCare) window.startEyeCare();
+
+  // ============ 周报自动提醒（周日 / 周一提示查看本周报告）============
+  (function () {
+    try {
+      const now = new Date();
+      const dow = now.getDay();                    // 0=周日 1=周一
+      if (dow !== 0 && dow !== 1) return;
+      function weekNo(d) {                          // ISO 周序号
+        const t = new Date(d.valueOf());
+        t.setDate(t.getDate() - ((d.getDay() + 6) % 7) + 3);
+        const fThu = new Date(t.getFullYear(), 0, 4);
+        fThu.setDate(fThu.getDate() - ((fThu.getDay() + 6) % 7) + 3);
+        return 1 + Math.round((t - fThu) / 604800000);
+      }
+      const key = '_weeklyReportSeen_' + now.getFullYear() + '_' + weekNo(now);
+      if (localStorage.getItem(key)) return;
+      if (!window.Parent || !window.Parent.openReport) return;
+
+      const bar = document.createElement('div');
+      bar.style.cssText = 'position:fixed;left:10px;right:10px;top:10px;z-index:9996;' +
+        'background:linear-gradient(135deg,#A5D8FF,#FFE066);color:#1B4F7A;border-radius:14px;' +
+        'padding:12px 14px;font-size:13px;display:flex;align-items:center;gap:10px;' +
+        'box-shadow:0 6px 20px rgba(0,0,0,.18)';
+      bar.innerHTML =
+        '<span style="font-size:22px">📋</span>' +
+        '<span style="flex:1;line-height:1.5;font-weight:700">本周成长报告已生成，' +
+        '看看这周收获了多少颗星星～</span>' +
+        '<button id="wkViewBtn" style="padding:6px 14px;border:none;border-radius:999px;' +
+        'background:#fff;color:#1B4F7A;font-weight:800;cursor:pointer">查看</button>' +
+        '<button id="wkCloseBtn" style="background:rgba(0,0,0,.1);border-radius:50%;' +
+        'width:26px;height:26px;cursor:pointer">×</button>';
+      document.body.appendChild(bar);
+
+      function seen() { try { localStorage.setItem(key, '1'); } catch (e) {} }
+      bar.querySelector('#wkViewBtn').addEventListener('click', function () {
+        seen(); bar.remove(); window.Parent.openReport('week');
+      });
+      bar.querySelector('#wkCloseBtn').addEventListener('click', function () {
+        seen(); bar.remove();
+      });
+    } catch (e) {}
+  })();
 
   // 云端同步（若已配置则自动连接并定时同步）
   initCloud();
