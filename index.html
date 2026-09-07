@@ -7,9 +7,9 @@
   <meta name="referrer" content="no-referrer" />
   <meta name="theme-color" content="#FFB6D9" />
   <title>一年级学生工作台 · 深圳 · 一（6）班</title>
-  <link rel="stylesheet" href="./css/style.css?v=20" />
+  <link rel="stylesheet" href="./css/style.css?v=22" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%8C%3C/text%3E%3C/svg%3E" />
-  <link rel="manifest" href="./manifest.json?v=20" />
+  <link rel="manifest" href="./manifest.json?v=22" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="一(6)班工作台" />
@@ -120,24 +120,65 @@
   <div class="confetti-layer" id="confettiLayer"></div>
   <div class="toast" id="toast"></div>
 
-  <script src="./js/data.js?v=20"></script>
-  <script src="./js/schedule.js?v=20"></script>
-  <script src="./js/sync.js?v=20"></script>
-  <script src="./js/views.js?v=20"></script>
-  <script src="./js/study.js?v=20"></script>
-  <script src="./js/schedule-edit.js?v=20"></script>
-  <script src="./js/cloud-sync.js?v=20"></script>
-  <script src="./js/materials.js?v=20"></script>
-  <script src="./js/exam.js?v=20"></script>
-  <script src="./js/review.js?v=20"></script>
-  <script src="./js/routine.js?v=20"></script>
-  <script src="./js/parent.js?v=20"></script>
-  <script src="./js/app.js?v=20"></script>
+  <script src="./js/feedback.js?v=22"></script>
+  <script src="./js/data.js?v=22"></script>
+  <script src="./js/schedule.js?v=22"></script>
+  <script src="./js/sync.js?v=22"></script>
+  <script src="./js/views.js?v=22"></script>
+  <script src="./js/study.js?v=22"></script>
+  <script src="./js/schedule-edit.js?v=22"></script>
+  <script src="./js/cloud-sync.js?v=22"></script>
+  <script src="./js/materials.js?v=22"></script>
+  <script src="./js/exam.js?v=22"></script>
+  <script src="./js/review.js?v=22"></script>
+  <script src="./js/routine.js?v=22"></script>
+  <script src="./js/parent.js?v=22"></script>
+  <script src="./js/lib/hanzi-writer.min.js?v=22"></script>
+  <script src="./js/app.js?v=22"></script>
   <script>
-    // PWA：离线缓存注册（手机加载一次后，5G/无网络也能秒开）
+    // PWA：离线缓存注册 + 新版本更新提示
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js?v=21').catch(function () {});
+        var refreshed = false;
+        // 新 SW 接管后自动刷新一次，让用户立刻用上新版本
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (refreshed) return;
+          refreshed = true;
+          window.location.reload();
+        });
+
+        function showUpdateBar(reg) {
+          if (document.getElementById('swUpdateBar')) return;
+          var bar = document.createElement('div');
+          bar.id = 'swUpdateBar';
+          bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;display:flex;' +
+            'align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px 14px;' +
+            'background:linear-gradient(135deg,#FF9EC4,#FFB6D9);color:#fff;font-size:14px;' +
+            'font-weight:700;box-shadow:0 4px 16px rgba(255,120,170,.4)';
+          bar.innerHTML = '<span>\uD83C\uDF89 工作台有新版本啦</span>' +
+            '<button id="swUpdateBtn" style="padding:6px 14px;border:none;border-radius:999px;' +
+            'background:#fff;color:#E4537F;font-weight:800;cursor:pointer">立即更新</button>' +
+            '<button id="swUpdateClose" style="padding:6px 10px;border:none;border-radius:999px;' +
+            'background:rgba(255,255,255,.28);color:#fff;cursor:pointer">稍后</button>';
+          document.body.appendChild(bar);
+          document.getElementById('swUpdateBtn').onclick = function () {
+            var w = reg.waiting || reg.installing;
+            if (w) w.postMessage({ type: 'SKIP_WAITING' });
+            bar.remove();
+          };
+          document.getElementById('swUpdateClose').onclick = function () { bar.remove(); };
+        }
+
+        navigator.serviceWorker.register('./sw.js?v=22').then(function (reg) {
+          if (reg.waiting && navigator.serviceWorker.controller) { showUpdateBar(reg); return; }
+          reg.addEventListener('updatefound', function () {
+            var nw = reg.installing;
+            if (!nw) return;
+            nw.addEventListener('statechange', function () {
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) showUpdateBar(reg);
+            });
+          });
+        }).catch(function () {});
       });
     }
   </script>
