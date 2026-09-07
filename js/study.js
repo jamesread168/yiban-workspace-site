@@ -312,12 +312,18 @@
       function initWriter(data) {
         try {
           if (typeof HanziWriter === 'undefined') { tip.textContent = '笔顺组件未加载'; return; }
-          writer = HanziWriter.create('hzBox', data, {
+          // ⚠️ 关键：character 参数必须是「字」本身；字形数据通过 charDataLoader 提供。
+          // 之前误把数据对象当 character 传入，HanziWriter 内部加载失败 → 画布空白、无报错。
+          writer = HanziWriter.create('hzBox', z, {
+            charDataLoader: function () { return data; },
             width: 210, height: 210, padding: 8,
             showOutline: true, showCharacter: true,
             strokeColor: '#E4537F', outlineColor: '#DDDDDD',
             radicalColor: '#FF9EC4', drawingColor: '#E4537F',
             strokeAnimationSpeed: 1, delayBetweenStrokes: 250,
+            onError: function (msg) {
+              if (tip) tip.textContent = '笔顺出错：' + msg;
+            },
             onComplete: function () {
               tip.textContent = '✅ 写完啦，很棒！';
               if (window.Feedback) window.Feedback.done();
@@ -329,13 +335,19 @@
         }
       }
 
-      // 字形数据：在线加载；离线时优雅降级，不影响其它功能
-      fetch('https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/' + encodeURIComponent(z) + '.json')
-        .then(function (r) { return r.json(); })
-        .then(initWriter)
-        .catch(function () {
-          tip.textContent = '笔顺数据需联网加载（当前离线，可先跟读 / 书空）';
-        });
+      // 字形数据：优先用本地打包数据（window.ZI_STROKES，96 字全量，离线可用）；
+      // 本地缺失的字再走在线加载兜底
+      const localStroke = window.ZI_STROKES && window.ZI_STROKES[z];
+      if (localStroke) {
+        initWriter(localStroke);
+      } else {
+        fetch('https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/' + encodeURIComponent(z) + '.json')
+          .then(function (r) { return r.json(); })
+          .then(initWriter)
+          .catch(function () {
+            tip.textContent = '笔顺数据需联网加载（当前离线，可先跟读 / 书空）';
+          });
+      }
 
       modalEl().querySelector('#hzPlay').addEventListener('click', function () {
         if (writer) { writer.animateCharacter(); tip.textContent = '看清楚每一笔的顺序～'; }
