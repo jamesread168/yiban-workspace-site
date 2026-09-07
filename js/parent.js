@@ -521,6 +521,8 @@
 
   // ============ 星星校准（家长专用）============
   function openStarCalibrate() {
+    // 儿童模式下点：先验证家长密码，通过后再打开
+    if (currentMode() !== 'parent') { askPin('calibrate', () => openStarCalibrate()); return; }
     const d = st();
     const cur = (d.stars && d.stars.total) || 0;
     window.openModal(`
