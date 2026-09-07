@@ -3,36 +3,44 @@
  * 策略：stale-while-revalidate —— 优先秒开缓存，后台静默更新
  * 效果：手机加载过一次后，即使 5G 流量下被拦/无网络，也能正常打开工作台
  */
-const CACHE_NAME = 'yiban-workspace-v21';
+const CACHE_NAME = 'yiban-workspace-v22';
 const CORE_FILES = [
   './',
-  './index.html?v=20',
-  './manifest.json?v=20',
-  './css/style.css?v=20',
-  './js/data.js?v=20',
-  './js/sync.js?v=20',
-  './js/schedule.js?v=20',
-  './js/schedule-edit.js?v=20',
-  './js/study.js?v=20',
-  './js/views.js?v=20',
-  './js/cloud-sync.js?v=20',
-  './js/materials.js?v=20',
-  './js/exam.js?v=20',
-  './js/review.js?v=20',
-  './js/routine.js?v=20',
-  './js/parent.js?v=20',
-  './js/app.js?v=20',
-  './assets/icons/icon-192.png?v=20',
-  './assets/icons/icon-512.png?v=20',
+  './index.html?v=22',
+  './manifest.json?v=22',
+  './css/style.css?v=22',
+  './js/data.js?v=22',
+  './js/sync.js?v=22',
+  './js/schedule.js?v=22',
+  './js/schedule-edit.js?v=22',
+  './js/study.js?v=22',
+  './js/views.js?v=22',
+  './js/cloud-sync.js?v=22',
+  './js/materials.js?v=22',
+  './js/exam.js?v=22',
+  './js/review.js?v=22',
+  './js/routine.js?v=22',
+  './js/parent.js?v=22',
+  './js/feedback.js?v=22',
+  './js/lib/hanzi-writer.min.js?v=22',
+  './js/app.js?v=22',
+  './assets/icons/icon-192.png?v=22',
+  './assets/icons/icon-512.png?v=22',
 ];
 
 // 安装：预缓存核心文件
+// 注意：这里**不**自动 skipWaiting —— 等用户在页面上点「立即更新」再接管，
+// 避免用户正在打卡/写字时页面被强制刷新导致数据中断。
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME)
       .then((c) => Promise.allSettled(CORE_FILES.map((f) => c.add(f))))
-      .then(() => self.skipWaiting())
   );
+});
+
+// 接收页面指令：用户点了「立即更新」→ 立刻接管页面
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // 激活：清理旧版本缓存
