@@ -863,6 +863,7 @@
         <div class="input-row" style="flex-wrap:wrap;gap:10px">
           <button class="btn-sm btn-pink" id="exportData">导出数据</button>
           <button class="btn-sm btn-green" id="importData">导入数据</button>
+          <button class="btn-sm btn-yellow" id="starCalibrateBtn">⭐ 校准星星</button>
           <button class="btn-sm btn-gray" id="resetToday">重置今日</button>
           <input type="file" id="importDataFile" accept="application/json,.json" style="display:none" />
         </div>
