@@ -245,10 +245,19 @@
       if (toHw) {
         toHw.addEventListener('click', () => {
           const doAdd = () => {
+            const p = poems[i];
+            const res = {
+              video: p.song || '',
+              lines: p.lines || [],
+              tip: p.tip || '',
+              story: p.story || '',
+              actions: p.actions || [],
+              method: p.method || '',
+            };
             const ok = window.Homework && window.Homework.add
-              ? window.Homework.add('yuwen', '背诵古诗《' + poems[i].title + '》', 15)
+              ? window.Homework.add('yuwen', '背诵古诗《' + p.title + '》', 15, res)
               : false;
-            if (ok) toast('已加入今日作业：背诵《' + poems[i].title + '》✅');
+            if (ok) toast('已加入今日作业（含背诵助手）：《' + p.title + '》✅');
           };
           if (window.Parent && window.Parent.currentMode && window.Parent.currentMode() !== 'parent') {
             window.Parent.askPin('hw', doAdd);
