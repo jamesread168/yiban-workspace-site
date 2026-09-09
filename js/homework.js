@@ -230,12 +230,11 @@
                 <span class="todo-text">${esc(it.text)}
                   <span style="font-size:12px;color:var(--text-light)"> · ${it.minutes} 分钟${it.done && it.doneAt ? ' · ' + new Date(it.doneAt).toTimeString().slice(0, 5) + ' 完成' : ''}</span>
                 </span>
+                ${(() => { const r = resOf(it); return r && r.lines && r.lines.length ? `<div style="margin-top:6px;background:linear-gradient(135deg,#F0FDF8,#E8F8F0);border-radius:10px;padding:8px 11px;font-size:13px;line-height:1.95;color:#2D7A55">${r.lines.map(l => esc(l)).join('<br/>')}</div>` : ''; })()}
                 ${resOf(it) ? `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
                   ${resOf(it).video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).video)}">🎬 唱古诗</a>` : ''}
                   <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
-                     href="https://www.ximalaya.com/search/${encodeURIComponent(it.text.replace(/[《》（）]/g, ''))}">🎧 听音频</a>
-                  <a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener"
-                     href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(it.text.replace(/[《》（）]/g, ''))}">📖 看文本</a>
+                     href="https://search.bilibili.com/all?keyword=${encodeURIComponent(String(it.text).replace(/[《》（）]/g, '') + ' 朗诵')}&order=click">🎧 听朗诵</a>
                   <button class="btn-sm btn-green" data-hw-res="${it.id}">💡 背诵助手</button>
                 </div>` : ''}
                 ${canEdit ? `<button class="todo-del" data-hw-del="${it.id}">×</button>` : ''}
@@ -319,9 +318,9 @@
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${r.video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.video)}">🎬 唱古诗</a>` : ''}
             <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
-               href="https://www.ximalaya.com/search/${encodeURIComponent(key)}">🎧 听音频</a>
+               href="https://search.bilibili.com/all?keyword=${encodeURIComponent(key + ' 朗诵')}&order=click">🎧 听朗诵</a>
             <a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener"
-               href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(key)}">📖 看文本</a>
+               href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(key)}">📖 更多解读</a>
           </div>
         </div>
       </div>
