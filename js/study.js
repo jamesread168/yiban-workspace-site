@@ -221,6 +221,8 @@
           <div class="poem-author">${p.author}</div>
           <div class="poem-lines">${p.lines.map(l => `<div class="poem-line">${[...l].map((ch, idx) => `<span class="poem-char" style="animation-delay:${idx * 0.07}s">${ch}</span>`).join('')}</div>`).join('')}</div>
         </div>
+        ${p.song ? `<div style="text-align:center;margin:12px 0 2px"><a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${p.song}">🎵 唱古诗（儿歌版）</a></div>` : ''}
+        ${p.tip ? `<div class="poem-tip" style="margin-top:6px">💡 ${p.tip}</div>` : ''}
         <div class="poem-nav">
           <button class="btn-sm btn-gray" data-prev>← 上一首</button>
           <span style="font-size:13px;color:var(--text-light)">点击诗句朗读</span>
