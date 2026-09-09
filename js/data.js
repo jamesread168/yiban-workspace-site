@@ -124,9 +124,10 @@ const POEMS = [
       '百川东到海，何时复西归？',
       '少壮不努力，老大徒伤悲。',
     ],
-    song: 'https://www.bilibili.com/video/BV1zJqQYrEMM',
+    song: 'https://v.qq.com/x/cover/mzc00100qvent72/z0788tbi3fs.html',
     video2: 'https://v.qq.com/x/page/f0525vyvk8u.html',
-    audio: 'https://www.ximalaya.com/ertong/45153925/369941779',
+    audio: 'https://www.ximalaya.com/album/18964652',
+    video3: 'https://mp.cctv.com/2023/05/23/VIDEmK8T1Pi6tIugs25WhPW3230523.shtml',
     tip: '汉乐府民歌，全诗十句（5 联），教材版即完整版。劝人珍惜时光，最后两句"少壮不努力，老大徒伤悲"是千古名句，也是考试重点。',
     story: '院子里绿油油的向日葵，叶子上挂着露珠，等太阳出来露珠就被晒干了。春天阳光暖暖地照着，花草树木都长得亮晶晶的。可是真怕秋天到来，叶子就变黄掉下来了。河水都往东流进大海，什么时候能再流回来呢？所以小时候不努力，长大了只能伤心难过。',
     actions: [
