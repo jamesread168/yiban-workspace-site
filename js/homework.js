@@ -232,9 +232,12 @@
                 </span>
                 ${(() => { const r = resOf(it); return r && r.lines && r.lines.length ? `<div style="margin-top:6px;background:linear-gradient(135deg,#F0FDF8,#E8F8F0);border-radius:10px;padding:8px 11px;font-size:13px;line-height:1.95;color:#2D7A55">${r.lines.map(l => esc(l)).join('<br/>')}</div>` : ''; })()}
                 ${resOf(it) ? `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-                  ${resOf(it).video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).video)}">🎬 唱古诗</a>` : ''}
-                  <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
-                     href="https://search.bilibili.com/all?keyword=${encodeURIComponent(String(it.text).replace(/[《》（）]/g, '') + ' 朗诵')}&order=click">🎧 听朗诵</a>
+                  ${resOf(it).video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).video)}">🎤 唱古诗</a>` : ''}
+                  ${resOf(it).video2 ? `<a class="btn-sm btn-pink" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).video2)}">🎬 朗诵视频</a>` : ''}
+                  ${resOf(it).audio
+                    ? `<a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).audio)}">🎧 听音频</a>`
+                    : `<a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
+                       href="https://search.bilibili.com/all?keyword=${encodeURIComponent(String(it.text).replace(/[《》（）]/g, '') + ' 朗诵')}&order=click">🎧 听朗诵</a>`}
                   <button class="btn-sm btn-green" data-hw-res="${it.id}">💡 背诵助手</button>
                 </div>` : ''}
                 ${canEdit ? `<button class="todo-del" data-hw-del="${it.id}">×</button>` : ''}
@@ -279,6 +282,8 @@
     if (!p) return null;
     return {
       video: p.song || '',
+      video2: p.video2 || '',
+      audio: p.audio || '',
       lines: p.lines || [],
       tip: p.tip || '',
       story: p.story || '',
@@ -316,9 +321,12 @@
         <div class="bd-section">
           <div class="bd-label">🔗 配套资源</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            ${r.video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.video)}">🎬 唱古诗</a>` : ''}
-            <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
-               href="https://search.bilibili.com/all?keyword=${encodeURIComponent(key + ' 朗诵')}&order=click">🎧 听朗诵</a>
+            ${r.video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.video)}">🎤 唱古诗</a>` : ''}
+            ${r.video2 ? `<a class="btn-sm btn-pink" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.video2)}">🎬 朗诵视频</a>` : ''}
+            ${r.audio
+              ? `<a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.audio)}">🎧 听音频</a>`
+              : `<a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
+                 href="https://search.bilibili.com/all?keyword=${encodeURIComponent(key + ' 朗诵')}&order=click">🎧 听朗诵</a>`}
             <a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener"
                href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(key)}">📖 更多解读</a>
           </div>
