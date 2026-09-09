@@ -1089,7 +1089,7 @@
     const marks = s.books || {};   // { bookId: 'want'|'reading'|'done' }
     const curTheme = window._bookTheme || '全部';
 
-    const list = curTheme === '全部' ? books : books.filter(b => b.theme === curTheme);
+    const list = curTheme === '全部' ? books : books.filter(b => b.group === curTheme);
 
     const stat = { want: 0, reading: 0, done: 0 };
     Object.values(marks).forEach(v => { if (stat[v] != null) stat[v]++; });
@@ -1100,7 +1100,7 @@
       <div class="view-head">
         <div>
           <div class="view-title">📚 绘本馆</div>
-          <div class="view-sub">${books.length} 本精选绘本 · 含一年级「快乐读书吧」必读书目</div>
+          <div class="view-sub">${books.length} 本 · 教育部推荐 + 深圳一年级上学期书单（和大人一起读 / 课内作家 / 拓展阅读 / 共读 / 多学科 / 选读）</div>
         </div>
       </div>
 
@@ -1125,8 +1125,8 @@
               <div class="book-title">${esc(b.title)}</div>
               <div class="book-author">${esc(b.author)}</div>
               <div class="book-tags">
-                <span class="book-tag">${esc(b.theme)}</span>
-                <span class="book-tag age">${esc(b.age)}岁</span>
+                <span class="book-tag">${esc(b.sub || b.group)}</span>
+                <span class="book-tag age">${esc(b.group)}</span>
               </div>
               ${m ? `<div class="book-mark">${MARK_LABEL[m]}</div>` : ''}
             </div>`;
@@ -1172,8 +1172,8 @@
           <h2>${esc(b.title)}</h2>
           <div class="bd-author">${esc(b.author)}</div>
           <div class="bd-tags">
-            <span class="book-tag">${esc(b.theme)}</span>
-            <span class="book-tag age">适读 ${esc(b.age)} 岁</span>
+            <span class="book-tag">${esc(b.group)}</span>
+            <span class="book-tag age">${esc(b.sub || '')}</span>
           </div>
         </div>
       </div>
