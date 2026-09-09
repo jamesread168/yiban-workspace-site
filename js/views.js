@@ -1187,16 +1187,22 @@
           <div class="bd-guide">${esc(b.guide)}</div>
         </div>
         <div class="bd-section">
-          <div class="bd-label">🎧 线上阅读</div>
+          <div class="bd-label">🎬 线上阅读${b.video ? ' <span class="t-sub">（已配直达视频）</span>' : ''}</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${b.video ? `<a class="btn-sm btn-pink" style="text-decoration:none" target="_blank" rel="noopener"
+               href="${esc(b.video)}">▶️ 直接看视频</a>` : ''}
             <a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener"
                href="https://www.ximalaya.com/search/${encodeURIComponent(b.title)}">🎧 听故事</a>
             <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
-               href="https://search.bilibili.com/all?keyword=${encodeURIComponent(b.title + ' 绘本 朗读')}">📺 看绘本</a>
+               href="https://search.bilibili.com/all?keyword=${encodeURIComponent(b.title + ' 绘本')}&order=click">📺 热门视频</a>
             <a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener"
                href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(b.title)}">📖 微信读书</a>
           </div>
-          <div class="view-sub" style="margin-top:6px">一年级识字量有限，推荐先「听故事」再跟读；视频版有画面，孩子更容易看懂。</div>
+          <div class="view-sub" style="margin-top:6px">
+            ${b.video
+              ? '「▶️ 直接看视频」是已验证可用的版本，点开即播；「热门视频」按播放量排序，能找到更多版本。'
+              : '一年级识字量有限，推荐先「听故事」再跟读；「热门视频」已按播放量排序，排最前的就是最多人看的版本。'}
+          </div>
         </div>
         <div class="bd-section">
           <div class="bd-label">🏷️ 标记为</div>
