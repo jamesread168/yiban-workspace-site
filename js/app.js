@@ -1823,21 +1823,27 @@ function init() {
 
   // 家长模式条：在侧边栏底部渲染
   (function () {
-    const m = window.Parent && window.Parent.uiBar ? window.Parent.uiBar() : '';
-    if (!m) return;
+    if (!window.Parent || !window.Parent.uiBar) return;
     const host = document.createElement('div');
     host.id = 'parentBar';
     host.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:50';
-    host.innerHTML = m;
     document.body.appendChild(host);
     // 底部留白，避免悬浮按钮遮挡最后一个卡片
     document.body.style.paddingBottom = '56px';
-    host.querySelectorAll('[data-mode-to]').forEach(b => b.addEventListener('click', () => {
-      const t = b.dataset.modeTo;
-      if (t === 'parent') window.Parent.askPin();
-      else window.Parent.setMode('child');
+
+    // 切换模式后按钮会被 innerHTML 重绘，必须重新绑定事件（此前重绘后丢失，导致点了没反应）
+    function refresh() {
       host.innerHTML = window.Parent.uiBar();
-    }));
+      host.querySelectorAll('[data-mode-to]').forEach(b => {
+        b.addEventListener('click', () => {
+          const t = b.dataset.modeTo;
+          if (t === 'parent') window.Parent.askPin();
+          else window.Parent.setMode('child');   // setMode 会派发 modechange → 自动 refresh
+        });
+      });
+    }
+    document.addEventListener('modechange', refresh);
+    refresh();
   })();
 }
 
