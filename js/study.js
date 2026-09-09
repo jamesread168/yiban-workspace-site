@@ -221,7 +221,10 @@
           <div class="poem-author">${p.author}</div>
           <div class="poem-lines">${p.lines.map(l => `<div class="poem-line">${[...l].map((ch, idx) => `<span class="poem-char" style="animation-delay:${idx * 0.07}s">${ch}</span>`).join('')}</div>`).join('')}</div>
         </div>
-        ${p.song ? `<div style="text-align:center;margin:12px 0 2px"><a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${p.song}">🎵 唱古诗（儿歌版）</a></div>` : ''}
+        <div style="text-align:center;margin:12px 0 2px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          ${p.song ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${p.song}">🎵 唱古诗</a>` : ''}
+          <button class="btn-sm btn-green" id="poemToHw">📝 加入今日作业</button>
+        </div>
         ${p.tip ? `<div class="poem-tip" style="margin-top:6px">💡 ${p.tip}</div>` : ''}
         <div class="poem-nav">
           <button class="btn-sm btn-gray" data-prev>← 上一首</button>
@@ -237,6 +240,23 @@
       modalEl().querySelector('[data-next]').addEventListener('click', () => { i = (i + 1) % poems.length; window.openModal(build()); bind(); });
       // 分句朗读：题目 + 每句依次播放，句间自带停顿，更像朗诵
       modalEl().querySelector('[data-read]').addEventListener('click', () => speakLines([poems[i].title, ...poems[i].lines], 'zh-CN', 'poem'));
+      // 加入今日作业（家长权限；儿童模式点会先要求输密码，通过后再加）
+      const toHw = modalEl().querySelector('#poemToHw');
+      if (toHw) {
+        toHw.addEventListener('click', () => {
+          const doAdd = () => {
+            const ok = window.Homework && window.Homework.add
+              ? window.Homework.add('yuwen', '背诵古诗《' + poems[i].title + '》', 15)
+              : false;
+            if (ok) toast('已加入今日作业：背诵《' + poems[i].title + '》✅');
+          };
+          if (window.Parent && window.Parent.currentMode && window.Parent.currentMode() !== 'parent') {
+            window.Parent.askPin('hw', doAdd);
+          } else {
+            doAdd();
+          }
+        });
+      }
       modalEl().querySelector('[data-learn]').addEventListener('click', () => {
         st().poems[poems[i].title] = Date.now();
         window.SyncAPI.saveData(st());
