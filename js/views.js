@@ -1187,6 +1187,18 @@
           <div class="bd-guide">${esc(b.guide)}</div>
         </div>
         <div class="bd-section">
+          <div class="bd-label">🎧 线上阅读</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener"
+               href="https://www.ximalaya.com/search/${encodeURIComponent(b.title)}">🎧 听故事</a>
+            <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
+               href="https://search.bilibili.com/all?keyword=${encodeURIComponent(b.title + ' 绘本 朗读')}">📺 看绘本</a>
+            <a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener"
+               href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(b.title)}">📖 微信读书</a>
+          </div>
+          <div class="view-sub" style="margin-top:6px">一年级识字量有限，推荐先「听故事」再跟读；视频版有画面，孩子更容易看懂。</div>
+        </div>
+        <div class="bd-section">
           <div class="bd-label">🏷️ 标记为</div>
           <div class="bd-marks">
             ${['want', 'reading', 'done'].map(k => {
