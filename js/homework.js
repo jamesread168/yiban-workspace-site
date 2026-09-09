@@ -70,7 +70,8 @@
     return false;
   }
 
-  function add(subject, text, minutes) {
+  // res（可选）：配套学习资源 { video, lines, tip, story, actions, method }
+  function add(subject, text, minutes, res) {
     if (!requireParent()) return false;
     const t = String(text || '').trim();
     if (!t) return false;
@@ -83,6 +84,7 @@
       minutes: parseInt(minutes, 10) || 10,
       done: false,
       doneAt: null,
+      res: res || null,
     });
     save();
     return true;
@@ -228,6 +230,14 @@
                 <span class="todo-text">${esc(it.text)}
                   <span style="font-size:12px;color:var(--text-light)"> · ${it.minutes} 分钟${it.done && it.doneAt ? ' · ' + new Date(it.doneAt).toTimeString().slice(0, 5) + ' 完成' : ''}</span>
                 </span>
+                ${resOf(it) ? `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+                  ${resOf(it).video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).video)}">🎬 唱古诗</a>` : ''}
+                  <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
+                     href="https://www.ximalaya.com/search/${encodeURIComponent(it.text.replace(/[《》（）]/g, ''))}">🎧 听音频</a>
+                  <a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener"
+                     href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(it.text.replace(/[《》（）]/g, ''))}">📖 看文本</a>
+                  <button class="btn-sm btn-green" data-hw-res="${it.id}">💡 背诵助手</button>
+                </div>` : ''}
                 ${canEdit ? `<button class="todo-del" data-hw-del="${it.id}">×</button>` : ''}
               </li>`).join('')}
           </ul>
@@ -260,11 +270,80 @@
   }
 
   // ============ 事件绑定（由 app.js 的 bindViewEvents 统一调用）============
+  // 取作业项的配套资源：优先用自带的；
+  // 早期加入的「背诵古诗《XXX》」没有带资源，这里按标题自动匹配 POEMS 补齐（不改动原数据）
+  function resOf(it) {
+    if (it.res) return it.res;
+    const m = String(it.text || '').match(/《(.+?)》/);
+    if (!m) return null;
+    const p = ((window.AppData && window.AppData.POEMS) || []).find(x => x.title === m[1]);
+    if (!p) return null;
+    return {
+      video: p.song || '',
+      lines: p.lines || [],
+      tip: p.tip || '',
+      story: p.story || '',
+      actions: p.actions || [],
+      method: p.method || '',
+    };
+  }
+
+  // 背诵助手：把原文、白话、动作记忆、背诵步骤整合在一起
+  function openResModal(it) {
+    const r = resOf(it) || {};
+    const key = String(it.text || '').replace(/[《》（）]/g, '');
+    const quote = (r.lines || []).map(l =>
+      `<div style="font-size:17px;line-height:2.1;letter-spacing:1px">${esc(l)}</div>`).join('');
+    window.openModal(`
+      <div style="padding:16px 16px 4px">
+        <div style="font-size:17px;font-weight:800;color:#2D7A55;margin-bottom:4px">💡 背诵助手</div>
+        <div class="view-sub" style="margin-bottom:12px">${esc(it.text)}</div>
+        ${quote ? `<div class="bd-section">
+          <div class="bd-label">📜 原文</div>
+          <div style="background:linear-gradient(135deg,#F0FDF8,#E8F8F0);border-radius:12px;padding:12px 14px">${quote}</div>
+        </div>` : ''}
+        ${r.story ? `<div class="bd-section">
+          <div class="bd-label">🖼 讲了什么（白话）</div>
+          <div style="font-size:14px;line-height:1.8;color:#3A3A4E">${esc(r.story)}</div>
+        </div>` : ''}
+        ${(r.actions && r.actions.length) ? `<div class="bd-section">
+          <div class="bd-label">🤸 动作记忆（边做边背，身体记得最牢）</div>
+          <div style="font-size:13px;line-height:1.95;color:#3A3A4E">${r.actions.map(a => '· ' + esc(a)).join('<br/>')}</div>
+        </div>` : ''}
+        ${r.method ? `<div class="bd-section">
+          <div class="bd-label">🎯 背诵步骤</div>
+          <div style="font-size:13px;line-height:1.8;color:#3A3A4E">${esc(r.method)}</div>
+        </div>` : ''}
+        <div class="bd-section">
+          <div class="bd-label">🔗 配套资源</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${r.video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.video)}">🎬 唱古诗</a>` : ''}
+            <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
+               href="https://www.ximalaya.com/search/${encodeURIComponent(key)}">🎧 听音频</a>
+            <a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener"
+               href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(key)}">📖 看文本</a>
+          </div>
+        </div>
+      </div>
+      <div class="act-foot"><button class="btn-sm btn-gray" data-back>关闭</button></div>
+    `);
+    const m = document.querySelector('#modalLayer');
+    const back = m.querySelector('[data-back]');
+    if (back) back.addEventListener('click', () => window.closeModal());
+  }
+
   function bind(root) {
     // 模式切换按钮（儿童模式下的「我是家长，去布置作业」）
     if (window.Parent && window.Parent.bindBar) {
       try { window.Parent.bindBar(root); } catch (e) {}
     }
+    root.querySelectorAll('[data-hw-res]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const it = listOf(todayKey()).find(x => x.id === el.dataset.hwRes);
+        if (it) openResModal(it);
+      });
+    });
     root.querySelectorAll('[data-hw-toggle]').forEach(el => {
       el.addEventListener('click', (e) => { e.stopPropagation(); toggle(el.dataset.hwToggle); });
     });
