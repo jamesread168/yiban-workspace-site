@@ -234,6 +234,7 @@
                 ${resOf(it) ? `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
                   ${resOf(it).video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).video)}">🎤 唱古诗</a>` : ''}
                   ${resOf(it).video2 ? `<a class="btn-sm btn-pink" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).video2)}">🎬 朗诵视频</a>` : ''}
+                  ${resOf(it).video3 ? `<a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).video3)}">📺 央视朗诵</a>` : ''}
                   ${resOf(it).audio
                     ? `<a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(resOf(it).audio)}">🎧 听音频</a>`
                     : `<a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
@@ -283,6 +284,7 @@
     return {
       video: p.song || '',
       video2: p.video2 || '',
+      video3: p.video3 || '',
       audio: p.audio || '',
       lines: p.lines || [],
       tip: p.tip || '',
@@ -323,6 +325,7 @@
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${r.video ? `<a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.video)}">🎤 唱古诗</a>` : ''}
             ${r.video2 ? `<a class="btn-sm btn-pink" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.video2)}">🎬 朗诵视频</a>` : ''}
+            ${r.video3 ? `<a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.video3)}">📺 央视朗诵</a>` : ''}
             ${r.audio
               ? `<a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(r.audio)}">🎧 听音频</a>`
               : `<a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
