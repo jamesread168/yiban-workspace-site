@@ -1194,7 +1194,7 @@
             <a class="btn-sm btn-purple" style="text-decoration:none" target="_blank" rel="noopener"
                href="https://www.ximalaya.com/search/${encodeURIComponent(b.title)}">🎧 听故事</a>
             <a class="btn-sm btn-yellow" style="text-decoration:none" target="_blank" rel="noopener"
-               href="https://search.bilibili.com/all?keyword=${encodeURIComponent(b.title + ' 绘本')}&order=click">📺 热门视频</a>
+               href="https://v.qq.com/x/search/?q=${encodeURIComponent(b.title + ' 绘本')}">📺 看视频</a>
             <a class="btn-sm btn-gray" style="text-decoration:none" target="_blank" rel="noopener"
                href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(b.title)}">📖 微信读书</a>
           </div>
