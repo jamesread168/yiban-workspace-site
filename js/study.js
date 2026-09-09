@@ -249,6 +249,7 @@
             const res = {
               video: p.song || '',
               video2: p.video2 || '',
+              video3: p.video3 || '',
               audio: p.audio || '',
               lines: p.lines || [],
               tip: p.tip || '',
