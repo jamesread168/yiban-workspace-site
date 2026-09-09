@@ -248,6 +248,8 @@
             const p = poems[i];
             const res = {
               video: p.song || '',
+              video2: p.video2 || '',
+              audio: p.audio || '',
               lines: p.lines || [],
               tip: p.tip || '',
               story: p.story || '',
