@@ -408,6 +408,15 @@ input, textarea, select { font-family: inherit; border: none; outline: none; }
 .poem-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
 .poem-tip { text-align: center; color: var(--text-light); font-size: 12px; margin-top: 8px; }
 
+/* 古诗索引 */
+.poem-idx-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 16px; }
+.poem-idx-bar span { font-size: 12px; color: var(--text-light); }
+.poem-index { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.poem-chip { border: 2px solid #FFE0EC; background: #fff; border-radius: 999px; padding: 5px 11px; font-size: 13px; color: var(--text-light); cursor: pointer; transition: all .15s; }
+.poem-chip:active { transform: scale(.94); }
+.poem-chip.done { border-color: #B5EAD7; background: #F3FBF8; color: #2D7A55; }
+.poem-chip.on { background: linear-gradient(135deg, #FFE066, #FFB570); border-color: #FFB570; color: #7A3D00; font-weight: 800; }
+
 /* 数学 */
 .math-q { font-size: 52px; text-align: center; color: var(--blue-deep); font-weight: 800; margin: 18px 0; font-variant-numeric: tabular-nums; }
 .math-opt { font-size: 26px; }
