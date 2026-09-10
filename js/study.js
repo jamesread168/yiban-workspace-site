@@ -212,8 +212,17 @@
   ACTIVITIES.poem = function (subId) {
     const poems = D().POEMS;
     let i = 0;
+    let idxOpen = true;
     function build() {
       const p = poems[i];
+      const learned = st().poems || {};
+      const learnedN = poems.filter(q => learned[q.title]).length;
+      const idxHtml = `
+        <div class="poem-idx-bar">
+          <span>📑 全部诗名（已背 ${learnedN}/${poems.length}）</span>
+          <button class="btn-sm btn-gray" data-idx-toggle>${idxOpen ? '收起' : '展开'}</button>
+        </div>
+        ${idxOpen ? `<div class="poem-index">${poems.map((q, k) => `<button type="button" class="poem-chip${k === i ? ' on' : ''}${learned[q.title] ? ' done' : ''}" data-jump="${k}">${learned[q.title] ? '✅' : ''}${q.title}</button>`).join('')}</div>` : ''}`;
       return screen(
         `<span class="ae">📜</span><span class="at">古诗背诵</span><span class="as">${i + 1}/${poems.length}</span>`,
         `<div class="poem-card" data-read>
@@ -231,11 +240,24 @@
           <span style="font-size:13px;color:var(--text-light)">点击诗句朗读</span>
           <button class="btn-sm btn-pink" data-next>下一首 →</button>
         </div>
-        <div class="poem-tip">也可以点「学会了」记录已背古诗</div>`,
+        <div class="poem-tip">也可以点「学会了」记录已背古诗</div>
+        ${idxHtml}`,
         `<button class="btn-sm btn-green" data-learn>学会了 ✓</button><button class="btn-sm btn-gray" data-back>返回</button>`
       );
     }
     function bind() {
+      // 诗名索引：点一下直接跳到那首，并回到顶部
+      const jumpTo = k => {
+        i = k;
+        window.openModal(build()); bind();
+        const mb = modalEl().querySelector('.modal-body');
+        if (mb) mb.scrollTop = 0;
+      };
+      modalEl().querySelectorAll('[data-jump]').forEach(el => {
+        el.addEventListener('click', () => jumpTo(+el.dataset.jump));
+      });
+      const idxTg = modalEl().querySelector('[data-idx-toggle]');
+      if (idxTg) idxTg.addEventListener('click', () => { idxOpen = !idxOpen; window.openModal(build()); bind(); });
       modalEl().querySelector('[data-prev]').addEventListener('click', () => { i = (i - 1 + poems.length) % poems.length; window.openModal(build()); bind(); });
       modalEl().querySelector('[data-next]').addEventListener('click', () => { i = (i + 1) % poems.length; window.openModal(build()); bind(); });
       // 分句朗读：题目 + 每句依次播放，句间自带停顿，更像朗诵
