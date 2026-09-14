@@ -200,7 +200,10 @@
             <span class="alert-emoji">📌</span>
             <div style="flex:1">本周使用 <b>临时课表</b>（周起始 ${overrideKey}）<button class="btn-sm btn-gray" id="viewDefaultBtn" style="margin-left:6px">查看默认</button></div>
           </div>
-          ${diffHtml}` : ''}
+          ${diffHtml}` : (isWeekday ? `<div class="alert alert-info" style="margin-bottom:12px">
+            <span class="alert-emoji">📘</span>
+            <div style="flex:1">本周未上传临时课表，正在使用 <b>默认课表</b>。老师发了新课表，点「📤 上传课表」更新即可。</div>
+          </div>` : '')}
           <div class="card-title">
             📅 今日课表
             <span class="t-sub">${isOverridden ? '（临时）' : '（深圳小学 8:55 第一节）'}</span>
