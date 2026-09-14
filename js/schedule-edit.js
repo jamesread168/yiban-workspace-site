@@ -136,6 +136,7 @@
             style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px" />
           <span id="editWeekStatus" style="font-size:12px"></span>
           <button class="btn-sm btn-yellow" id="copyDefaultBtn">📋 复制默认</button>
+          <button class="btn-sm btn-green" id="copyPrevWeekBtn" style="display:none">⬅ 沿用上周</button>
           <button class="btn-sm btn-gray" id="clearWeekBtn">🗑 清除该周</button>
         </div>
         <div style="overflow-x:auto;border-radius:10px;border:1px solid #eee">
@@ -170,10 +171,16 @@
       const mon = getMonday(parseYMD(v));
       const key = ymd(mon);
       const isOv = window.WeekOverrides && !!window.WeekOverrides[key];
+      const prevKey = ymd(new Date(mon.getTime() - 7 * 86400000));
+      const prevOv = window.WeekOverrides && window.WeekOverrides[prevKey];
       const st = modal.querySelector('#editWeekStatus');
       st.innerHTML = isOv
         ? `<span style="color:#C75A92;font-weight:700">⚠️ 本周已有临时课表覆盖</span>`
-        : `<span style="color:#7A7A8C">该周无临时课表（key=${key}）</span>`;
+        : (prevOv
+          ? `<span style="color:#1B4F7A">本周暂无临时课表（用默认）；上周 <b>${prevKey}</b> 有临时课表，可点「⬅ 沿用上周」</span>`
+          : `<span style="color:#7A7A8C">该周无临时课表（key=${key}），将使用默认课表</span>`);
+      const cp = modal.querySelector('#copyPrevWeekBtn');
+      if (cp) cp.style.display = prevOv ? '' : 'none';
     };
     updateStatus();
 
@@ -201,6 +208,25 @@
           inp.value = cur.name || '';
         });
         toast('已用默认课表填充');
+      });
+    }
+
+    // 沿用上周：老师常常连续几周发同一张表，一键填充后再微调即可
+    const prevBtn = modal.querySelector('#copyPrevWeekBtn');
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        const v = modal.querySelector('#editWeekInput').value;
+        const mon = getMonday(parseYMD(v));
+        const prevKey = ymd(new Date(mon.getTime() - 7 * 86400000));
+        const prev = window.WeekOverrides && window.WeekOverrides[prevKey];
+        if (!prev) { toast('上周没有临时课表'); return; }
+        modal.querySelectorAll('.sched-cell').forEach(inp => {
+          const d = +inp.dataset.day;
+          const slot = SLOTS[+inp.dataset.slot];
+          const hit = (prev[d] || []).find(x => x.period === slot.period);
+          inp.value = hit ? hit.name : '';
+        });
+        toast('已沿用上周（' + prevKey + '）课表，核对后点「💾 保存」');
       });
     }
 
